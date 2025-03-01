@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "line_follower_reader.hpp"
 
 void setup()
 {
@@ -6,10 +7,10 @@ void setup()
   Serial.begin(115200);
   while (!Serial)
     delay(10); // Pause the program until serial port opens.
+
+  line_follower_reader_init();
+
+  xTaskCreatePinnedToCore(line_follower_read, "LINE_FOLOWER_READER", 5120, nullptr, 10, nullptr, 1);
 }
 
-void loop()
-{
-  Serial.println("Testing new git");
-  delay(3000);
-}
+void loop() {}
