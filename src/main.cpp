@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "line_follower_reader.hpp"
+#include "line_follower.hpp"
 
 void setup()
 {
@@ -8,9 +8,9 @@ void setup()
   while (!Serial)
     delay(10); // Pause the program until serial port opens.
 
-  line_follower_reader_init();
+  LineFollower lf;
 
-  xTaskCreatePinnedToCore(line_follower_read, "LINE_FOLOWER_READER", 5120, nullptr, 10, nullptr, 1);
+  xTaskCreatePinnedToCore(LineFollower::TaskWrapper, "LINE_FOLOWER", 5120, nullptr, 10, nullptr, 1);
 }
 
 void loop() {}

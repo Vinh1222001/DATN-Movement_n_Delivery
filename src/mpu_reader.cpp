@@ -1,13 +1,14 @@
-#include "mpu_reader.hpp" 
+#include "mpu_reader.hpp"
 
-Adafruit_MPU6050* mpu_reader;
+Adafruit_MPU6050 *mpu_reader;
 
-void mpu_setup(){
-    
+void mpu_setup()
+{
     // Setting Accelerometer range
     mpu_reader->setAccelerometerRange(MPU6050_RANGE_8_G);
     Serial.print("Accelerometer range set to: ");
-    switch (mpu_reader->getAccelerometerRange()) {
+    switch (mpu_reader->getAccelerometerRange())
+    {
     case MPU6050_RANGE_2_G:
         Serial.println("+-2G");
         break;
@@ -25,7 +26,8 @@ void mpu_setup(){
     // Setting Gyro Range
     mpu_reader->setGyroRange(MPU6050_RANGE_500_DEG);
     Serial.print("Gyro range set to: ");
-    switch (mpu_reader->getGyroRange()) {
+    switch (mpu_reader->getGyroRange())
+    {
     case MPU6050_RANGE_250_DEG:
         Serial.println("+- 250 deg/s");
         break;
@@ -40,11 +42,11 @@ void mpu_setup(){
         break;
     }
 
-
     // Setting Filter Bandwidth
     mpu_reader->setFilterBandwidth(MPU6050_BAND_5_HZ);
     Serial.print("Filter bandwidth set to: ");
-    switch (mpu_reader->getFilterBandwidth()) {
+    switch (mpu_reader->getFilterBandwidth())
+    {
     case MPU6050_BAND_260_HZ:
         Serial.println("260 Hz");
         break;
@@ -69,13 +71,16 @@ void mpu_setup(){
     }
 }
 
-void mpu_reader_init(void){
+void mpu_reader_init(void)
+{
     mpu_reader = new Adafruit_MPU6050();
 
-    if (!mpu_reader->begin()) {
+    if (!mpu_reader->begin())
+    {
         Serial.println("Failed to find MPU6050 chip");
-        while (1) {
-        delay(10);
+        while (1)
+        {
+            delay(10);
         }
     }
     Serial.println("MPU6050 Found!");
@@ -83,7 +88,8 @@ void mpu_reader_init(void){
     mpu_setup();
 }
 
-void mpu_read(void* arg){
+void mpu_read(void *arg)
+{
 
     while (true)
     {
@@ -112,7 +118,6 @@ void mpu_read(void* arg){
         Serial.println(" degC");
 
         Serial.println("");
-        vTaskDelay(500/portTICK_PERIOD_MS);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
-
 }
