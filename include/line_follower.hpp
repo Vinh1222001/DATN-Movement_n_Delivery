@@ -48,8 +48,8 @@ private:
 public:
   LineFollower();
   ~LineFollower();
-  void TaskFn();
-  static void TaskWrapper(void *pvParameter);
+  void taskFn();
+  static void taskWrapper(void *pvParameter);
 };
 
 #endif

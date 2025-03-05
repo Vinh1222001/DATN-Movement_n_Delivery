@@ -24,7 +24,7 @@ LineFollower::LineFollower()
 
 LineFollower::~LineFollower() {}
 
-void LineFollower::TaskFn()
+void LineFollower::taskFn()
 {
   while (true)
   {
@@ -49,8 +49,8 @@ void LineFollower::TaskFn()
   }
 }
 
-void LineFollower::TaskWrapper(void *pvParameter)
+void LineFollower::taskWrapper(void *pvParameter)
 {
   LineFollower *instance = static_cast<LineFollower *>(pvParameter);
-  instance->TaskFn();
+  instance->taskFn();
 }
