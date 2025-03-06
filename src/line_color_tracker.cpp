@@ -1,6 +1,6 @@
 #include "line_color_tracker.hpp"
 
-LineColorTracker::LineColorTracker(int priority) : priority(priority)
+LineColorTracker::LineColorTracker(int priority) : BaseModule("LINE_COLOR_TRACKER", priority, 1000, 4, 0)
 {
   pinMode(LINE_COLOR_TRACKER_S2, OUTPUT);
   pinMode(LINE_COLOR_TRACKER_S3, OUTPUT);
@@ -46,7 +46,7 @@ void LineColorTracker::printColor(int red, int green, int blue)
   }
 
   // Print colored output
-  Serial.printf("Color:%s, RGB code: %d, %d, %d\n", colorCode, red, green, blue);
+  ESP_LOGI(this->NAME, "Color:%s, RGB code: %d, %d, %d\n", colorCode, red, green, blue);
 }
 
 void LineColorTracker::taskFn()
@@ -67,34 +67,34 @@ void LineColorTracker::taskFn()
   this->printColor(red, green, blue);
 }
 
-void LineColorTracker::taskWrapper(void *pvParameter)
-{
-  LineColorTracker *instance = static_cast<LineColorTracker *>(pvParameter);
-  if (instance == nullptr)
-  {
-    Serial.println("Error: taskWrapper received a null instance");
-    vTaskDelete(nullptr);
-  }
-  while (true)
-  {
-    instance->taskFn();
-    delay(1000);
-  }
-}
+// void LineColorTracker::taskWrapper(void *pvParameter)
+// {
+//   LineColorTracker *instance = static_cast<LineColorTracker *>(pvParameter);
+//   if (instance == nullptr)
+//   {
+//     Serial.println("Error: taskWrapper received a null instance");
+//     vTaskDelete(nullptr);
+//   }
+//   while (true)
+//   {
+//     instance->taskFn();
+//     delay(1000);
+//   }
+// }
 
-void LineColorTracker::run()
-{
-  if (xTaskCreatePinnedToCore(taskWrapper, "LINE_COLOR_TRACKER", BASE_STACK_DEEP * 4, this, this->priority, nullptr, 0) == pdPASS)
-  {
-    Serial.printf("LINE COLOR TRACKER: created task SUCCESSFULLY\n");
-  }
-  else
-  {
-    Serial.printf("LINE COLOR TRACKER: created task FAILED\n");
-    while (true)
-    {
-    }
-  }
-}
+// void LineColorTracker::run()
+// {
+//   if (xTaskCreatePinnedToCore(taskWrapper, "LINE_COLOR_TRACKER", BASE_STACK_DEEP * 4, this, this->priority, nullptr, 0) == pdPASS)
+//   {
+//     Serial.printf("LINE COLOR TRACKER: created task SUCCESSFULLY\n");
+//   }
+//   else
+//   {
+//     Serial.printf("LINE COLOR TRACKER: created task FAILED\n");
+//     while (true)
+//     {
+//     }
+//   }
+// }
 
 LineColorTracker *lineColorTracker;

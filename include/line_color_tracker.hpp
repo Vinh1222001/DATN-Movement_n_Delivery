@@ -3,6 +3,7 @@
 #define LINE_COLOR_TRACKER_HPP
 
 #include <Arduino.h>
+#include "base_module.hpp"
 
 // Define pins
 /**
@@ -20,7 +21,7 @@
 
 #define LINE_COLOR_TRACKER_DELAY 200 // MS
 
-class LineColorTracker
+class LineColorTracker : public BaseModule
 {
 private:
   const int MIN_RED = 5;
@@ -38,14 +39,14 @@ private:
 
   void printColor(int red, int green, int blue);
 
-  void taskFn();
-  static void taskWrapper(void *pvParameter);
+  void taskFn() override;
+  // static void taskWrapper(void *pvParameter);
 
 public:
   LineColorTracker(int priority = DEFAULT_TASK_PRIORITY);
   ~LineColorTracker();
 
-  void run();
+  // void run();
 };
 
 extern LineColorTracker *lineColorTracker;
