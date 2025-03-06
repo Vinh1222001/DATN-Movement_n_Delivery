@@ -27,7 +27,7 @@
 
 #define THRESHOLE 2000
 
-typedef struct line_follow_values
+typedef struct
 {
   int out1;
   int out2;
@@ -36,20 +36,26 @@ typedef struct line_follow_values
   int out4;
   int out5;
 #endif
-} t_line_follow_values;
+} t_lineFollowerValues;
 
-extern t_line_follow_values line_reader;
+extern t_lineFollowerValues line_reader;
 
 class LineFollower
 {
 private:
-  t_line_follow_values line_reader;
+  int priority;
+  t_lineFollowerValues line_reader;
 
-public:
-  LineFollower();
-  ~LineFollower();
   void taskFn();
   static void taskWrapper(void *pvParameter);
+
+public:
+  LineFollower(int priority = DEFAULT_TASK_PRIORITY);
+  ~LineFollower();
+
+  void run();
 };
+
+extern LineFollower *lineFollower;
 
 #endif

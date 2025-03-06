@@ -30,17 +30,23 @@ private:
   const int MIN_BLUE = 4;
   const int MAX_BLUE = 35;
 
+  int priority;
+
   int getRed();
   int getGreen();
   int getBlue();
 
   void printColor(int red, int green, int blue);
 
-public:
-  LineColorTracker();
-  ~LineColorTracker();
-
   void taskFn();
   static void taskWrapper(void *pvParameter);
+
+public:
+  LineColorTracker(int priority = DEFAULT_TASK_PRIORITY);
+  ~LineColorTracker();
+
+  void run();
 };
+
+extern LineColorTracker *lineColorTracker;
 #endif

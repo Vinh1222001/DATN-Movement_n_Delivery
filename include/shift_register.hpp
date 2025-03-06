@@ -4,19 +4,26 @@
 
 #include <Arduino.h>
 
-#define LATCH_PIN   19
-#define CLOCK_PIN   18
-#define DS_PIN      23
+#define LATCH_PIN 19
+#define CLOCK_PIN 18
+#define DS_PIN 23
+class ShiftRegister
+{
+private:
+  int priority;
 
-/**
- * @brief Using for initializing shift register
- */
+  void taskFn(uint8_t value);
+  static void taskWrapper(void *pvParameter);
 
-void shift_register_init(void);
+public:
+  ShiftRegister(int priority = DEFAULT_TASK_PRIORITY);
+  ~ShiftRegister();
 
-/**
- * @brief This function is responsible for shifting the given value
- */
-void shift_register_shift(uint8_t value);
+  uint8_t genValue(const bool signals[8]);
+
+  void run();
+};
+
+extern ShiftRegister *shiftRegister;
 
 #endif

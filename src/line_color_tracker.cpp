@@ -1,6 +1,6 @@
 #include "line_color_tracker.hpp"
 
-LineColorTracker::LineColorTracker()
+LineColorTracker::LineColorTracker(int priority) : priority(priority)
 {
   pinMode(LINE_COLOR_TRACKER_S2, OUTPUT);
   pinMode(LINE_COLOR_TRACKER_S3, OUTPUT);
@@ -73,7 +73,7 @@ void LineColorTracker::taskWrapper(void *pvParameter)
   if (instance == nullptr)
   {
     Serial.println("Error: taskWrapper received a null instance");
-    vTaskDelete(nullptr); // Terminate task safely
+    vTaskDelete(nullptr);
   }
   while (true)
   {
@@ -81,3 +81,20 @@ void LineColorTracker::taskWrapper(void *pvParameter)
     delay(1000);
   }
 }
+
+void LineColorTracker::run()
+{
+  if (xTaskCreatePinnedToCore(taskWrapper, "LINE_COLOR_TRACKER", BASE_STACK_DEEP * 4, this, this->priority, nullptr, 0) == pdPASS)
+  {
+    Serial.printf("LINE COLOR TRACKER: created task SUCCESSFULLY\n");
+  }
+  else
+  {
+    Serial.printf("LINE COLOR TRACKER: created task FAILED\n");
+    while (true)
+    {
+    }
+  }
+}
+
+LineColorTracker *lineColorTracker;
