@@ -1,13 +1,19 @@
 #include "mpu_reader.hpp"
 
-Adafruit_MPU6050 *mpu_reader;
-
-void mpu_setup()
+MPUReader::MPUReader(int priority) : BaseModule("MPU_READER", priority)
 {
-    // Setting Accelerometer range
-    mpu_reader->setAccelerometerRange(MPU6050_RANGE_8_G);
+    // Config pins
+}
+
+MPUReader::~MPUReader()
+{
+}
+
+void MPUReader::setup()
+{
+    this->sensor->setAccelerometerRange(MPU6050_RANGE_8_G);
     Serial.print("Accelerometer range set to: ");
-    switch (mpu_reader->getAccelerometerRange())
+    switch (this->sensor->getAccelerometerRange())
     {
     case MPU6050_RANGE_2_G:
         Serial.println("+-2G");
@@ -24,9 +30,9 @@ void mpu_setup()
     }
 
     // Setting Gyro Range
-    mpu_reader->setGyroRange(MPU6050_RANGE_500_DEG);
+    this->sensor->setGyroRange(MPU6050_RANGE_500_DEG);
     Serial.print("Gyro range set to: ");
-    switch (mpu_reader->getGyroRange())
+    switch (this->sensor->getGyroRange())
     {
     case MPU6050_RANGE_250_DEG:
         Serial.println("+- 250 deg/s");
@@ -43,9 +49,9 @@ void mpu_setup()
     }
 
     // Setting Filter Bandwidth
-    mpu_reader->setFilterBandwidth(MPU6050_BAND_5_HZ);
+    this->sensor->setFilterBandwidth(MPU6050_BAND_5_HZ);
     Serial.print("Filter bandwidth set to: ");
-    switch (mpu_reader->getFilterBandwidth())
+    switch (this->sensor->getFilterBandwidth())
     {
     case MPU6050_BAND_260_HZ:
         Serial.println("260 Hz");
@@ -71,11 +77,11 @@ void mpu_setup()
     }
 }
 
-void mpu_reader_init(void)
+void MPUReader::init()
 {
-    mpu_reader = new Adafruit_MPU6050();
+    this->sensor = new Adafruit_MPU6050();
 
-    if (!mpu_reader->begin())
+    if (!this->sensor->begin())
     {
         Serial.println("Failed to find MPU6050 chip");
         while (1)
@@ -85,39 +91,36 @@ void mpu_reader_init(void)
     }
     Serial.println("MPU6050 Found!");
 
-    mpu_setup();
+    this->setup();
 }
 
-void mpu_read(void *arg)
+void MPUReader::taskFn()
 {
+    sensors_event_t a, g, temp;
+    this->sensor->getEvent(&a, &g, &temp);
 
-    while (true)
-    {
-        sensors_event_t a, g, temp;
-        mpu_reader->getEvent(&a, &g, &temp);
+    /* Print out the values */
+    Serial.print("Acceleration X: ");
+    Serial.print(a.acceleration.x);
+    Serial.print(", Y: ");
+    Serial.print(a.acceleration.y);
+    Serial.print(", Z: ");
+    Serial.print(a.acceleration.z);
+    Serial.println(" m/s^2");
 
-        /* Print out the values */
-        Serial.print("Acceleration X: ");
-        Serial.print(a.acceleration.x);
-        Serial.print(", Y: ");
-        Serial.print(a.acceleration.y);
-        Serial.print(", Z: ");
-        Serial.print(a.acceleration.z);
-        Serial.println(" m/s^2");
+    Serial.print("Rotation X: ");
+    Serial.print(g.gyro.x);
+    Serial.print(", Y: ");
+    Serial.print(g.gyro.y);
+    Serial.print(", Z: ");
+    Serial.print(g.gyro.z);
+    Serial.println(" rad/s");
 
-        Serial.print("Rotation X: ");
-        Serial.print(g.gyro.x);
-        Serial.print(", Y: ");
-        Serial.print(g.gyro.y);
-        Serial.print(", Z: ");
-        Serial.print(g.gyro.z);
-        Serial.println(" rad/s");
+    Serial.print("Temperature: ");
+    Serial.print(temp.temperature);
+    Serial.println(" degC");
 
-        Serial.print("Temperature: ");
-        Serial.print(temp.temperature);
-        Serial.println(" degC");
-
-        Serial.println("");
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
+    Serial.println("");
 }
+
+MPUReader *mpuReader;

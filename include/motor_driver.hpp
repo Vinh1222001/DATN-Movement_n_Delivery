@@ -2,11 +2,18 @@
 #ifndef MOTOR_DRIVER_HPP
 #define MOTOR_DRIVER_HPP
 
-class MotorDriver
+#include <Arduino.h>
+#include "base_module.hpp"
+
+class MotorDriver : public BaseModule
 {
 private:
+  void taskFn() override;
+
 public:
-  MotorDriver();
+  MotorDriver(int priority = DEFAULT_TASK_PRIORITY);
   ~MotorDriver();
 };
+
+extern MotorDriver *motorDriver;
 #endif

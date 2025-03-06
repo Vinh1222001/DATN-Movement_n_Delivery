@@ -2,7 +2,7 @@
 
 const char *TAG = "LINE_FOLLOWER";
 
-LineFollower::LineFollower(int priority) : priority(priority)
+LineFollower::LineFollower(int priority) : BaseModule("LINE_FOLLOWER", priority)
 {
   pinMode(LINE_FOLLOWER_OUT1_PIN, INPUT);
   pinMode(LINE_FOLLOWER_OUT2_PIN, INPUT);
@@ -41,36 +41,36 @@ void LineFollower::taskFn()
 #endif
 }
 
-void LineFollower::taskWrapper(void *pvParameter)
-{
-  bool flag = true;
-  LineFollower *instance = static_cast<LineFollower *>(pvParameter);
-  if (instance == nullptr)
-  {
-    ESP_LOGI(TAG, "(Error): taskWrapper received a null instance");
-    vTaskDelete(nullptr);
-    flag = false;
-  }
-  while (flag)
-  {
-    instance->taskFn();
-    delay(1000);
-  }
-}
+// void LineFollower::taskWrapper(void *pvParameter)
+// {
+//   bool flag = true;
+//   LineFollower *instance = static_cast<LineFollower *>(pvParameter);
+//   if (instance == nullptr)
+//   {
+//     ESP_LOGI(TAG, "(Error): taskWrapper received a null instance");
+//     vTaskDelete(nullptr);
+//     flag = false;
+//   }
+//   while (flag)
+//   {
+//     instance->taskFn();
+//     delay(1000);
+//   }
+// }
 
-void LineFollower::run()
-{
-  if (xTaskCreatePinnedToCore(taskWrapper, "LINE_FOLLOWER", BASE_STACK_DEEP * 4, this, this->priority, nullptr, 0) == pdPASS)
-  {
-    Serial.printf("LINE FOLLOWER: created task SUCCESSFULLY\n");
-  }
-  else
-  {
-    Serial.printf("LINE FOLLOWER: created task FAILED\n");
-    while (true)
-    {
-    }
-  }
-}
+// void LineFollower::run()
+// {
+//   if (xTaskCreatePinnedToCore(taskWrapper, "LINE_FOLLOWER", BASE_STACK_DEEP * 4, this, this->priority, nullptr, 0) == pdPASS)
+//   {
+//     Serial.printf("LINE FOLLOWER: created task SUCCESSFULLY\n");
+//   }
+//   else
+//   {
+//     Serial.printf("LINE FOLLOWER: created task FAILED\n");
+//     while (true)
+//     {
+//     }
+//   }
+// }
 
 LineFollower *lineFollower;

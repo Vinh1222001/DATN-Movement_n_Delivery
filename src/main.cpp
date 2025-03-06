@@ -2,10 +2,10 @@
 #include "line_follower.hpp"
 #include "line_color_tracker.hpp"
 #include "shift_register.hpp"
+#include "motor_driver.hpp"
+#include "mpu_reader.hpp"
+#include "ultra_sonic_reader.hpp"
 
-// LineFollower lf;
-// LineColorTracker lct;
-ShiftRegister sr;
 void setup()
 {
   // put your setup code here, to run once:
@@ -16,6 +16,9 @@ void setup()
   lineColorTracker = new LineColorTracker();
   lineFollower = new LineFollower();
   shiftRegister = new ShiftRegister();
+  motorDriver = new MotorDriver();
+  mpuReader = new MPUReader();
+  ultraSonicReader = new UltraSonicReader();
 }
 
 void loop() {}

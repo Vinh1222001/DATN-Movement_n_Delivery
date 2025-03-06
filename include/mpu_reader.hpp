@@ -6,16 +6,22 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 
-extern Adafruit_MPU6050* mpu_reader;
+#include "base_module.hpp"
 
-/**
- * @brief Using for initializing MPU sensor and ready for reading data
- */
-void mpu_reader_init(void);
+class MPUReader : public BaseModule
+{
+private:
+  Adafruit_MPU6050 *sensor;
 
-/**
- * @brief Using  as a task. This function is responsible for reading data from the sensor
- */
-void mpu_read(void* arg); 
+  void setup();
+  void init();
+  void taskFn() override;
+
+public:
+  MPUReader(int priority = DEFAULT_TASK_PRIORITY);
+  ~MPUReader();
+};
+
+extern MPUReader *mpuReader;
 
 #endif

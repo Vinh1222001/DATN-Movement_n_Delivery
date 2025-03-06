@@ -3,30 +3,33 @@
 #define ULTRA_SONIC_READER_HPP
 
 #include <Arduino.h>
+#include "base_module.hpp"
 
 #define TRIGGER_PIN 12
-#define ECHO_PIN    34
+#define ECHO_PIN 34
 
 #define SOUND_SPEED 0.034
-#define CM_TO_INCH  0.393701
+#define CM_TO_INCH 0.393701
 
 #define DELAY_FOR_READ_VALUE 500
 
-typedef struct ultra_sonic{
-    volatile long duration;
-    float distance;
-} distance_reader;
+typedef struct
+{
+  volatile long duration;
+  float distance;
+} t_distance_values;
 
-extern distance_reader ultra_sonic_reader;
+class UltraSonicReader : public BaseModule
+{
+private:
+  t_distance_values value;
+  void taskFn() override;
 
-/**
- * @brief Using for initializing ultra sonic reader
- */
-void ultra_sonic_reader_init(void);
+public:
+  UltraSonicReader(int priority = DEFAULT_TASK_PRIORITY);
+  ~UltraSonicReader();
+};
 
-/**
- * @brief Using as a task. This function is responsible for reading data from sensor
- */
-void ultra_sonic_read(void* arg);
+extern UltraSonicReader *ultraSonicReader;
 
 #endif

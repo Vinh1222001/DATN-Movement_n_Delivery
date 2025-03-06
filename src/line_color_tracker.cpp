@@ -31,22 +31,13 @@ int LineColorTracker::getBlue()
 
 void LineColorTracker::printColor(int red, int green, int blue)
 {
-  const char *colorCode;
-  if (red > green && red > blue)
-  {
-    colorCode = "Red";
-  }
-  else if (green > red && green > blue)
-  {
-    colorCode = "Green";
-  }
-  else
-  {
-    colorCode = "Blue";
-  }
+  int maxValue = std::max({red, green, blue});
+
+  const char *color = (maxValue == red) ? "Red" : (maxValue == green) ? "Green"
+                                                                      : "Blue";
 
   // Print colored output
-  ESP_LOGI(this->NAME, "Color:%s, RGB code: %d, %d, %d\n", colorCode, red, green, blue);
+  ESP_LOGI(this->NAME, "Color:%s, RGB code: %d, %d, %d\n", color, red, green, blue);
 }
 
 void LineColorTracker::taskFn()

@@ -4,6 +4,8 @@
 
 #include <Arduino.h>
 
+#include "base_module.hpp"
+
 #ifndef LINE_FOLLOWER_VERSION
 #define LINE_FOLLOWER_VERSION 1
 #endif
@@ -40,20 +42,16 @@ typedef struct
 
 extern t_lineFollowerValues line_reader;
 
-class LineFollower
+class LineFollower : public BaseModule
 {
 private:
-  int priority;
   t_lineFollowerValues line_reader;
 
-  void taskFn();
-  static void taskWrapper(void *pvParameter);
+  void taskFn() override;
 
 public:
   LineFollower(int priority = DEFAULT_TASK_PRIORITY);
   ~LineFollower();
-
-  void run();
 };
 
 extern LineFollower *lineFollower;

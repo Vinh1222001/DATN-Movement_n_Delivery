@@ -3,6 +3,7 @@
 #define LINE_COLOR_TRACKER_HPP
 
 #include <Arduino.h>
+#include <algorithm>
 #include "base_module.hpp"
 
 // Define pins
@@ -24,14 +25,9 @@
 class LineColorTracker : public BaseModule
 {
 private:
-  const int MIN_RED = 5;
-  const int MAX_RED = 38;
-  const int MIN_GREEN = 4;
-  const int MAX_GREEN = 42;
-  const int MIN_BLUE = 4;
-  const int MAX_BLUE = 35;
-
-  int priority;
+  static constexpr int MIN_RED = 5, MAX_RED = 38;
+  static constexpr int MIN_GREEN = 4, MAX_GREEN = 42;
+  static constexpr int MIN_BLUE = 4, MAX_BLUE = 35;
 
   int getRed();
   int getGreen();
