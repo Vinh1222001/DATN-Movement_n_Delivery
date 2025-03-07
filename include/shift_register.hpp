@@ -6,10 +6,6 @@
 
 #include "base_module.hpp"
 
-#define LATCH_PIN 19
-#define CLOCK_PIN 18
-#define DS_PIN 23
-
 class ShiftRegister : public BaseModule
 {
 private:
@@ -18,7 +14,7 @@ private:
   uint8_t genValue(const bool signals[8]);
 
 public:
-  ShiftRegister(int priority = DEFAULT_TASK_PRIORITY);
+  ShiftRegister();
   ~ShiftRegister();
 
   void setShiftedValue(int value);

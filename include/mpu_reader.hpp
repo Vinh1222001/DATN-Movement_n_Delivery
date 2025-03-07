@@ -18,7 +18,7 @@ private:
   void taskFn() override;
 
 public:
-  MPUReader(int priority = DEFAULT_TASK_PRIORITY);
+  MPUReader();
   ~MPUReader();
 };
 

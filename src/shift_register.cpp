@@ -1,11 +1,17 @@
 #include "shift_register.hpp"
 
-ShiftRegister::ShiftRegister(int priority) : BaseModule("SHIFT_REGISTER", priority)
+ShiftRegister::ShiftRegister()
+		: BaseModule(
+					"SHIFT_REGISTER",
+					SHIFT_REGISTER_TASK_PRIORITY,
+					SHIFT_REGISTER_TASK_DELAY,
+					SHIFT_REGISTER_TASK_STACK_DEPTH_LEVEL,
+					SHIFT_REGISTER_TASK_PINNED_CORE_ID)
 {
 	this->value = 0;
-	pinMode(LATCH_PIN, OUTPUT);
-	pinMode(CLOCK_PIN, OUTPUT);
-	pinMode(DS_PIN, OUTPUT);
+	pinMode(SHIFT_REGISTER_PIN_LATCH, OUTPUT);
+	pinMode(SHIFT_REGISTER_PIN_CLOCK, OUTPUT);
+	pinMode(SHIFT_REGISTER_PIN_DS, OUTPUT);
 }
 
 ShiftRegister::~ShiftRegister()
@@ -26,9 +32,9 @@ uint8_t ShiftRegister::genValue(const bool signals[8])
 
 void ShiftRegister::taskFn()
 {
-	digitalWrite(LATCH_PIN, LOW);
-	shiftOut(DS_PIN, CLOCK_PIN, MSBFIRST, this->value);
-	digitalWrite(LATCH_PIN, HIGH);
+	digitalWrite(SHIFT_REGISTER_PIN_LATCH, LOW);
+	shiftOut(SHIFT_REGISTER_PIN_DS, SHIFT_REGISTER_PIN_CLOCK, MSBFIRST, this->value);
+	digitalWrite(SHIFT_REGISTER_PIN_LATCH, HIGH);
 }
 
 void ShiftRegister::setShiftedValue(int value)

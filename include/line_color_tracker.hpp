@@ -6,22 +6,6 @@
 #include <algorithm>
 #include "base_module.hpp"
 
-// Define pins
-/**
- * @deprecated
- */
-#define LINE_COLOR_TRACKER_S0 1 // Select frequency pins
-/**
- * @deprecated
- */
-#define LINE_COLOR_TRACKER_S1 1 // Select frequency pins
-
-#define LINE_COLOR_TRACKER_S2 25 // Filter color pins
-#define LINE_COLOR_TRACKER_S3 26 // Filter color pins
-#define LINE_COLOR_TRACKER_SENSOR_OUT 27
-
-#define LINE_COLOR_TRACKER_DELAY 200 // MS
-
 class LineColorTracker : public BaseModule
 {
 private:
@@ -36,13 +20,10 @@ private:
   void printColor(int red, int green, int blue);
 
   void taskFn() override;
-  // static void taskWrapper(void *pvParameter);
 
 public:
-  LineColorTracker(int priority = DEFAULT_TASK_PRIORITY);
+  LineColorTracker();
   ~LineColorTracker();
-
-  // void run();
 };
 
 extern LineColorTracker *lineColorTracker;

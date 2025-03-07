@@ -5,14 +5,6 @@
 #include <Arduino.h>
 #include "base_module.hpp"
 
-#define TRIGGER_PIN 12
-#define ECHO_PIN 34
-
-#define SOUND_SPEED 0.034
-#define CM_TO_INCH 0.393701
-
-#define DELAY_FOR_READ_VALUE 500
-
 typedef struct
 {
   volatile long duration;
@@ -26,7 +18,7 @@ private:
   void taskFn() override;
 
 public:
-  UltraSonicReader(int priority = DEFAULT_TASK_PRIORITY);
+  UltraSonicReader();
   ~UltraSonicReader();
 };
 

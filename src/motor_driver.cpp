@@ -1,6 +1,12 @@
 #include "motor_driver.hpp"
 
-MotorDriver::MotorDriver(int priority) : BaseModule("MOTOR_DRIVER", priority)
+MotorDriver::MotorDriver()
+    : BaseModule(
+          "MOTOR_DRIVER",
+          MOTOR_DRIVER_TASK_PRIORITY,
+          MOTOR_DRIVER_TASK_DELAY,
+          MOTOR_DRIVER_TASK_STACK_DEPTH_LEVEL,
+          MOTOR_DRIVER_TASK_PINNED_CORE_ID)
 {
   // Define PINS
 }

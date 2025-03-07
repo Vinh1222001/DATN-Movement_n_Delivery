@@ -2,15 +2,21 @@
 
 const char *TAG = "LINE_FOLLOWER";
 
-LineFollower::LineFollower(int priority) : BaseModule("LINE_FOLLOWER", priority)
+LineFollower::LineFollower()
+    : BaseModule(
+          "LINE_FOLLOWER",
+          LINE_FOLLOWER_TASK_PRIORITY,
+          LINE_FOLLOWER_TASK_DELAY,
+          LINE_FOLLOWER_TASK_STACK_DEPTH_LEVEL,
+          LINE_FOLLOWER_TASK_PINNED_CORE_ID)
 {
-  pinMode(LINE_FOLLOWER_OUT1_PIN, INPUT);
-  pinMode(LINE_FOLLOWER_OUT2_PIN, INPUT);
+  pinMode(LINE_FOLLOWER_PIN_OUT1, INPUT);
+  pinMode(LINE_FOLLOWER_PIN_OUT2, INPUT);
 
 #if LINE_FOLLOWER_VERSION == 1
-  pinMode(LINE_FOLLOWER_OUT3_PIN, INPUT);
-  pinMode(LINE_FOLLOWER_OUT4_PIN, INPUT);
-  pinMode(LINE_FOLLOWER_OUT5_PIN, INPUT);
+  pinMode(LINE_FOLLOWER_PIN_OUT3, INPUT);
+  pinMode(LINE_FOLLOWER_PIN_OUT4, INPUT);
+  pinMode(LINE_FOLLOWER_PIN_OUT5, INPUT);
 #endif
 
   this->line_reader = {
@@ -28,12 +34,12 @@ LineFollower::~LineFollower() {}
 
 void LineFollower::taskFn()
 {
-  this->line_reader.out1 = analogRead(LINE_FOLLOWER_OUT1_PIN);
-  this->line_reader.out2 = analogRead(LINE_FOLLOWER_OUT2_PIN);
+  this->line_reader.out1 = analogRead(LINE_FOLLOWER_PIN_OUT1);
+  this->line_reader.out2 = analogRead(LINE_FOLLOWER_PIN_OUT2);
 #if LINE_FOLLOWER_VERSION == 1
-  this->line_reader.out3 = analogRead(LINE_FOLLOWER_OUT3_PIN);
-  this->line_reader.out4 = analogRead(LINE_FOLLOWER_OUT4_PIN);
-  this->line_reader.out5 = analogRead(LINE_FOLLOWER_OUT5_PIN);
+  this->line_reader.out3 = analogRead(LINE_FOLLOWER_PIN_OUT3);
+  this->line_reader.out4 = analogRead(LINE_FOLLOWER_PIN_OUT4);
+  this->line_reader.out5 = analogRead(LINE_FOLLOWER_PIN_OUT5);
 #endif
   ESP_LOGI(TAG, "line 1: %d\nline 2: %d\n", this->line_reader.out1, this->line_reader.out2);
 #if LINE_FOLLOWER_VERSION == 1

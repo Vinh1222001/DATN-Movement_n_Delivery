@@ -11,7 +11,7 @@ private:
   void taskFn() override;
 
 public:
-  MotorDriver(int priority = DEFAULT_TASK_PRIORITY);
+  MotorDriver();
   ~MotorDriver();
 };
 

@@ -6,18 +6,6 @@
 
 #include "base_module.hpp"
 
-#ifndef LINE_FOLLOWER_VERSION
-#define LINE_FOLLOWER_VERSION 1
-#endif
-
-#define LINE_FOLLOWER_OUT1_PIN 25
-#define LINE_FOLLOWER_OUT2_PIN 26
-#if LINE_FOLLOWER_VERSION == 1
-#define LINE_FOLLOWER_OUT3_PIN 32
-#define LINE_FOLLOWER_OUT4_PIN 33
-#define LINE_FOLLOWER_OUT5_PIN 27
-#endif
-
 // #define LINE_FOLLOWER_OUT1_PIN_V1 32
 // #define LINE_FOLLOWER_OUT2_PIN_V1 33
 // #define LINE_FOLLOWER_OUT3_PIN_V1 25
@@ -50,7 +38,7 @@ private:
   void taskFn() override;
 
 public:
-  LineFollower(int priority = DEFAULT_TASK_PRIORITY);
+  LineFollower();
   ~LineFollower();
 };
 

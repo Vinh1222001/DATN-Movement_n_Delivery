@@ -18,7 +18,7 @@ void BaseModule::taskWrapper(void *pvParameter)
   BaseModule *instance = static_cast<BaseModule *>(pvParameter);
   if (instance == nullptr)
   {
-    ESP_LOGI(instance->NAME, "(Error): taskWrapper received a null instance\n");
+    ESP_LOGE(instance->NAME, "taskWrapper received a null instance\n");
     vTaskDelete(nullptr);
     return;
   }
@@ -32,13 +32,13 @@ void BaseModule::taskWrapper(void *pvParameter)
 
 void BaseModule::run()
 {
-  if (xTaskCreatePinnedToCore(taskWrapper, this->NAME, this->stackDepthLevel * 1024, this, this->priority, nullptr, this->cpuCore) == pdPASS)
+  if (xTaskCreatePinnedToCore(taskWrapper, this->NAME, this->stackDepthLevel * CONFIG_ESP32_CORE_DUMP_STACK_SIZE, this, this->priority, nullptr, this->cpuCore) == pdPASS)
   {
     ESP_LOGI(this->NAME, "created task SUCCESSFULLY\n");
   }
   else
   {
-    ESP_LOGI(this->NAME, "created task FAILED\n");
+    ESP_LOGE(this->NAME, "created task FAILED\n");
     while (true)
     {
     }
