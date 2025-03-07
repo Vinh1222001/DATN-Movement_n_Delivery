@@ -8,12 +8,18 @@
 class MotorDriver : public BaseModule
 {
 private:
+  bool state[5][4];
   void taskFn() override;
 
 public:
   MotorDriver();
   ~MotorDriver();
+
+  bool *moveFoward();
+  bool *moveBackward();
+  bool *moveLeft();
+  bool *moveRight();
+  bool *stop();
 };
 
-extern MotorDriver *motorDriver;
 #endif

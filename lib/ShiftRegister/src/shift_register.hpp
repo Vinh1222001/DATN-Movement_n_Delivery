@@ -22,6 +22,4 @@ public:
   int getShiftedValue();
 };
 
-extern ShiftRegister *shiftRegister;
-
 #endif

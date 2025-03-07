@@ -9,8 +9,6 @@ void setup()
 
   lineColorTracker = new LineColorTracker();
   lineFollower = new LineFollower();
-  shiftRegister = new ShiftRegister();
-  motorDriver = new MotorDriver();
   mpuReader = new MPUReader();
   ultraSonicReader = new UltraSonicReader();
 }
