@@ -7,11 +7,11 @@
 class BaseModule
 {
 protected:
-  int priority;        // Độ ưu tiên của task
-  int TASK_DELAY;      // Thời gian delay của task
-  const char *NAME;    // Tên module
-  int stackDepthLevel; // Độ sâu stack
-  int cpuCore;         // Core chạy task
+  const int *priority;        // Độ ưu tiên của task
+  const int *TASK_DELAY;      // Thời gian delay của task
+  const char *NAME;           // Tên module
+  const int *stackDepthLevel; // Độ sâu stack
+  const int *cpuCore;         // Core chạy task
 private:
 public:
   BaseModule(const char *name, int priority = DEFAULT_TASK_PRIORITY, int taskDelay = 1000, int stackDepthLevel = 1, int cpuCore = 0);
