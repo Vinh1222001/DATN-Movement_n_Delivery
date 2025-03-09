@@ -3,23 +3,24 @@
 #define MOTOR_DRIVER_HPP
 
 #include <Arduino.h>
-#include "base_module.hpp"
+// #include "base_module.hpp"
 
-class MotorDriver : public BaseModule
+class MotorDriver /* : public BaseModule*/
 {
 private:
   bool state[5][4];
-  void taskFn() override;
+  // void taskFn() override;
+  void writeState(const bool state[4]);
 
 public:
   MotorDriver();
   ~MotorDriver();
 
-  bool *moveFoward();
-  bool *moveBackward();
-  bool *moveLeft();
-  bool *moveRight();
-  bool *stop();
+  void moveFoward();
+  void moveBackward();
+  void moveLeft();
+  void moveRight();
+  void stop();
 };
 
 #endif

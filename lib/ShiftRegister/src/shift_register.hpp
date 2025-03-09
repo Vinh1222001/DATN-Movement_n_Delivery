@@ -4,13 +4,13 @@
 
 #include <Arduino.h>
 
-#include "base_module.hpp"
+// #include "/base_module.hpp"
 
-class ShiftRegister : public BaseModule
+class ShiftRegister
 {
 private:
   int value;
-  void taskFn() override;
+  // void taskFn() override;
   uint8_t genValue(const bool signals[8]);
 
 public:
@@ -18,8 +18,10 @@ public:
   ~ShiftRegister();
 
   void setShiftedValue(int value);
-  void setShiftedValue(bool states[8]);
+  void setShiftedValue(const bool states[8]);
   int getShiftedValue();
+
+  void shift();
 };
 
 #endif

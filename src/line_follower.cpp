@@ -28,55 +28,47 @@ LineFollower::LineFollower()
       .out5 = 0
 #endif
   };
+
+  motorDriver = new MotorDriver();
 }
 
 LineFollower::~LineFollower() {}
 
 void LineFollower::taskFn()
 {
-  this->line_reader.out1 = analogRead(LINE_FOLLOWER_PIN_OUT1);
-  this->line_reader.out2 = analogRead(LINE_FOLLOWER_PIN_OUT2);
+  this->line_reader.out1 = digitalRead(LINE_FOLLOWER_PIN_OUT1);
+  this->line_reader.out2 = digitalRead(LINE_FOLLOWER_PIN_OUT2);
 #if LINE_FOLLOWER_VERSION == 1
-  this->line_reader.out3 = analogRead(LINE_FOLLOWER_PIN_OUT3);
-  this->line_reader.out4 = analogRead(LINE_FOLLOWER_PIN_OUT4);
-  this->line_reader.out5 = analogRead(LINE_FOLLOWER_PIN_OUT5);
+  this->line_reader.out3 = digitalRead(LINE_FOLLOWER_PIN_OUT3);
+  this->line_reader.out4 = digitalRead(LINE_FOLLOWER_PIN_OUT4);
+  this->line_reader.out5 = digitalRead(LINE_FOLLOWER_PIN_OUT5);
 #endif
-  ESP_LOGI(TAG, "line 1: %d\nline 2: %d\n", this->line_reader.out1, this->line_reader.out2);
+  ESP_LOGI(TAG, "Left: %d, Right: %d", this->line_reader.out1, this->line_reader.out2);
 #if LINE_FOLLOWER_VERSION == 1
   ESP_LOGI(TAG, "line 1: %d\nline 2: %d\nline 3: %d\nline 4: %d\nline 5: %d\n\n", this->line_reader.out1, this->line_reader.out2, this->line_reader.out3, this->line_reader.out4, this->line_reader.out5);
 #endif
+
+  if (this->line_reader.out1 == 0 && this->line_reader.out2 == 0)
+  {
+    motorDriver->moveFoward();
+  }
+
+  if (this->line_reader.out1 == 1 && this->line_reader.out2 == 0)
+  {
+    motorDriver->moveRight();
+    delay(700);
+  }
+
+  if (this->line_reader.out1 == 0 && this->line_reader.out2 == 1)
+  {
+    motorDriver->moveLeft();
+    delay(700);
+  }
+
+  if (this->line_reader.out1 == 1 && this->line_reader.out2 == 1)
+  {
+    motorDriver->stop();
+  }
 }
-
-// void LineFollower::taskWrapper(void *pvParameter)
-// {
-//   bool flag = true;
-//   LineFollower *instance = static_cast<LineFollower *>(pvParameter);
-//   if (instance == nullptr)
-//   {
-//     ESP_LOGI(TAG, "(Error): taskWrapper received a null instance");
-//     vTaskDelete(nullptr);
-//     flag = false;
-//   }
-//   while (flag)
-//   {
-//     instance->taskFn();
-//     delay(1000);
-//   }
-// }
-
-// void LineFollower::run()
-// {
-//   if (xTaskCreatePinnedToCore(taskWrapper, "LINE_FOLLOWER", BASE_STACK_DEEP * 4, this, this->priority, nullptr, 0) == pdPASS)
-//   {
-//     Serial.printf("LINE FOLLOWER: created task SUCCESSFULLY\n");
-//   }
-//   else
-//   {
-//     Serial.printf("LINE FOLLOWER: created task FAILED\n");
-//     while (true)
-//     {
-//     }
-//   }
-// }
 
 LineFollower *lineFollower;

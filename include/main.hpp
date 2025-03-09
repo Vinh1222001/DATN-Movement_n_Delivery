@@ -3,6 +3,7 @@
 #define MAIN_HPP
 
 #include <Arduino.h>
+#include "esp_log.h"
 
 #include "line_follower.hpp"
 #include "line_color_tracker.hpp"

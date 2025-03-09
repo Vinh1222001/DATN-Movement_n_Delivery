@@ -5,6 +5,7 @@
 #include <Arduino.h>
 
 #include "base_module.hpp"
+#include "motor_driver.hpp"
 
 // #define LINE_FOLLOWER_OUT1_PIN_V1 32
 // #define LINE_FOLLOWER_OUT2_PIN_V1 33
@@ -34,6 +35,7 @@ class LineFollower : public BaseModule
 {
 private:
   t_lineFollowerValues line_reader;
+  MotorDriver *motorDriver;
 
   void taskFn() override;
 

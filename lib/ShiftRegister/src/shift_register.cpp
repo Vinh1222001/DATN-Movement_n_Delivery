@@ -1,12 +1,12 @@
 #include "shift_register.hpp"
 
 ShiftRegister::ShiftRegister()
-		: BaseModule(
-					"SHIFT_REGISTER",
-					SHIFT_REGISTER_TASK_PRIORITY,
-					SHIFT_REGISTER_TASK_DELAY,
-					SHIFT_REGISTER_TASK_STACK_DEPTH_LEVEL,
-					SHIFT_REGISTER_TASK_PINNED_CORE_ID)
+// : BaseModule(
+// 			"SHIFT_REGISTER",
+// 			SHIFT_REGISTER_TASK_PRIORITY,
+// 			SHIFT_REGISTER_TASK_DELAY,
+// 			SHIFT_REGISTER_TASK_STACK_DEPTH_LEVEL,
+// 			SHIFT_REGISTER_TASK_PINNED_CORE_ID)
 {
 	this->value = 0;
 	pinMode(SHIFT_REGISTER_PIN_LATCH, OUTPUT);
@@ -30,19 +30,17 @@ uint8_t ShiftRegister::genValue(const bool signals[8])
 	return value;
 }
 
-void ShiftRegister::taskFn()
-{
-	digitalWrite(SHIFT_REGISTER_PIN_LATCH, LOW);
-	shiftOut(SHIFT_REGISTER_PIN_DS, SHIFT_REGISTER_PIN_CLOCK, MSBFIRST, this->value);
-	digitalWrite(SHIFT_REGISTER_PIN_LATCH, HIGH);
-}
+// void ShiftRegister::taskFn()
+// {
+// 	this->shift();
+// }
 
 void ShiftRegister::setShiftedValue(int value)
 {
 	this->value = value;
 }
 
-void ShiftRegister::setShiftedValue(bool *states)
+void ShiftRegister::setShiftedValue(const bool states[8])
 {
 	this->value = genValue(states);
 }
@@ -50,6 +48,13 @@ void ShiftRegister::setShiftedValue(bool *states)
 int ShiftRegister::getShiftedValue()
 {
 	return this->value;
+}
+
+void ShiftRegister::shift()
+{
+	digitalWrite(SHIFT_REGISTER_PIN_LATCH, LOW);
+	shiftOut(SHIFT_REGISTER_PIN_DS, SHIFT_REGISTER_PIN_CLOCK, MSBFIRST, this->value);
+	digitalWrite(SHIFT_REGISTER_PIN_LATCH, HIGH);
 }
 
 // void ShiftRegister::taskWrapper(void *pvParameter)

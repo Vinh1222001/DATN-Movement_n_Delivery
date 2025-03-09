@@ -5,7 +5,7 @@ BaseModule::BaseModule(
     int priority,
     int taskDelay,
     int stackDepthLevel,
-    int cpuCore) : NAME(name), priority(&priority), TASK_DELAY(&taskDelay), stackDepthLevel(&stackDepthLevel), cpuCore(&cpuCore)
+    int cpuCore) : NAME(name), priority(priority), TASK_DELAY(taskDelay), stackDepthLevel(stackDepthLevel), cpuCore(cpuCore)
 {
 }
 
@@ -28,16 +28,24 @@ void BaseModule::taskWrapper(void *pvParameter)
     return;
   }
 
+  const uint32_t taskDelay = instance->TASK_DELAY;
+
   while (true)
   {
     instance->taskFn();
-    delay(*instance->TASK_DELAY); // Delay theo giá trị của TASK_DELAY
+    delay(taskDelay); // Delay theo giá trị của TASK_DELAY
   }
 }
 
 void BaseModule::run()
 {
-  if (xTaskCreatePinnedToCore(taskWrapper, this->NAME, *this->stackDepthLevel * CONFIG_ESP32_CORE_DUMP_STACK_SIZE, this, *this->priority, nullptr, *this->cpuCore) == pdPASS)
+  ESP_LOGI(this->NAME, "Stack deep level: %d, Prioriry: %d, CPU core: %d", this->stackDepthLevel, this->priority, this->cpuCore);
+
+  const int stackDeep = this->stackDepthLevel * CONFIG_ESP32_CORE_DUMP_STACK_SIZE;
+  const int priority = this->priority;
+  const int cpuCore = this->cpuCore;
+
+  if (xTaskCreatePinnedToCore(taskWrapper, this->NAME, stackDeep, this, priority, nullptr, cpuCore) == pdPASS)
   {
     ESP_LOGI(this->NAME, "created task SUCCESSFULLY\n");
   }
