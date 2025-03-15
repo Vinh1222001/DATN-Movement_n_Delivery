@@ -2,7 +2,7 @@
 
 const char *TAG = "LINE_FOLLOWER";
 
-LineFollower::LineFollower()
+LineFollower::LineFollower(MotorDriver *motorDriver)
     : BaseModule(
           "LINE_FOLLOWER",
           LINE_FOLLOWER_TASK_PRIORITY,
@@ -29,46 +29,80 @@ LineFollower::LineFollower()
 #endif
   };
 
-  motorDriver = new MotorDriver();
+  this->xMutextIsArrived = xSemaphoreCreateMutex();
+
+  this->motorDriver = motorDriver;
 }
 
 LineFollower::~LineFollower() {}
 
 void LineFollower::taskFn()
 {
-  this->line_reader.out1 = digitalRead(LINE_FOLLOWER_PIN_OUT1);
-  this->line_reader.out2 = digitalRead(LINE_FOLLOWER_PIN_OUT2);
+
+  /**
+   * @brief Out[number] = 1 => sensor catched the line, otherwise, Out[number] = 0
+   */
+  this->line_reader.out1 = !digitalRead(LINE_FOLLOWER_PIN_OUT1);
+  this->line_reader.out2 = !digitalRead(LINE_FOLLOWER_PIN_OUT2);
 #if LINE_FOLLOWER_VERSION == 1
-  this->line_reader.out3 = digitalRead(LINE_FOLLOWER_PIN_OUT3);
-  this->line_reader.out4 = digitalRead(LINE_FOLLOWER_PIN_OUT4);
-  this->line_reader.out5 = digitalRead(LINE_FOLLOWER_PIN_OUT5);
+  this->line_reader.out3 = !digitalRead(LINE_FOLLOWER_PIN_OUT3);
+  this->line_reader.out4 = !digitalRead(LINE_FOLLOWER_PIN_OUT4);
+  this->line_reader.out5 = !digitalRead(LINE_FOLLOWER_PIN_OUT5);
 #endif
+
+#if LINE_FOLLOWER_VERSION == 2
   ESP_LOGI(TAG, "Left: %d, Right: %d", this->line_reader.out1, this->line_reader.out2);
-#if LINE_FOLLOWER_VERSION == 1
-  ESP_LOGI(TAG, "line 1: %d\nline 2: %d\nline 3: %d\nline 4: %d\nline 5: %d\n\n", this->line_reader.out1, this->line_reader.out2, this->line_reader.out3, this->line_reader.out4, this->line_reader.out5);
 #endif
 
-  if (this->line_reader.out1 == 0 && this->line_reader.out2 == 0)
-  {
-    motorDriver->moveFoward();
-  }
+#if LINE_FOLLOWER_VERSION == 1
+  ESP_LOGI(TAG, "Inputs: [%d, %d, %d, %d, %d]",
+           this->line_reader.out1,
+           this->line_reader.out2,
+           this->line_reader.out3,
+           this->line_reader.out4,
+           this->line_reader.out5);
+#endif
 
-  if (this->line_reader.out1 == 1 && this->line_reader.out2 == 0)
-  {
-    motorDriver->moveRight();
-    delay(700);
-  }
+  bool left = (this->line_reader.out1 * 2 + this->line_reader.out2) > 0;
+  bool center = this->line_reader.out3 > 0;
+  bool right = (this->line_reader.out4 + this->line_reader.out5 * 2) > 0;
 
-  if (this->line_reader.out1 == 0 && this->line_reader.out2 == 1)
-  {
-    motorDriver->moveLeft();
-    delay(700);
-  }
+  ESP_LOGI(TAG,
+           "Signals: [%d, %d, %d,]",
+           left,
+           center,
+           right);
 
-  if (this->line_reader.out1 == 1 && this->line_reader.out2 == 1)
+  if (!left && center && !right)
   {
-    motorDriver->stop();
+    this->motorDriver->moveFoward();
+  }
+  else if (left && !center && !right)
+  {
+    this->motorDriver->moveLeft();
+  }
+  else if (!left && !center && right)
+  {
+    this->motorDriver->moveRight();
+  }
+  else if (!left && !center && !right)
+  {
+    this->motorDriver->moveLeft();
+  }
+  else
+  {
+    this->motorDriver->stop();
   }
 }
 
-LineFollower *lineFollower;
+bool LineFollower::isArrived()
+{
+  bool res = false;
+  if (xSemaphoreTake(this->xMutextIsArrived, portMAX_DELAY) == pdTRUE)
+  {
+    res = this->isItArrived;
+    xSemaphoreGive(this->xMutextIsArrived);
+  }
+
+  return res;
+}

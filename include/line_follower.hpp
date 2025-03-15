@@ -7,15 +7,6 @@
 #include "base_module.hpp"
 #include "motor_driver.hpp"
 
-// #define LINE_FOLLOWER_OUT1_PIN_V1 32
-// #define LINE_FOLLOWER_OUT2_PIN_V1 33
-// #define LINE_FOLLOWER_OUT3_PIN_V1 25
-// #define LINE_FOLLOWER_OUT4_PIN_V1 26
-// #define LINE_FOLLOWER_OUT5_PIN_V1 27
-
-// #define LINE_FOLLOWER_OUT1_PIN_V2 25
-// #define LINE_FOLLOWER_OUT2_PIN_V2 26
-
 #define THRESHOLE 2000
 
 typedef struct
@@ -35,15 +26,18 @@ class LineFollower : public BaseModule
 {
 private:
   t_lineFollowerValues line_reader;
-  MotorDriver *motorDriver;
+  MotorDriver *motorDriver = nullptr;
+
+  SemaphoreHandle_t xMutextIsArrived;
+  bool isItArrived = false;
 
   void taskFn() override;
 
 public:
-  LineFollower();
+  LineFollower(MotorDriver *motorDriver = nullptr);
   ~LineFollower();
-};
 
-extern LineFollower *lineFollower;
+  bool isArrived();
+};
 
 #endif

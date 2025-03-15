@@ -291,6 +291,9 @@
     "source.fixAll.eslint": "explicit"
   },
   "files.associations": {
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "*.tcc": "cpp",
+    "string": "cpp",
+    "string_view": "cpp"
   }
 }
