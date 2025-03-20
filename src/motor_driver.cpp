@@ -1,5 +1,7 @@
 #include "motor_driver.hpp"
 
+int step = 0;
+
 MotorDriver::MotorDriver()
     : BaseModule(
           "MOTOR_DRIVER",
@@ -9,54 +11,62 @@ MotorDriver::MotorDriver()
           MOTOR_DRIVER_TASK_PINNED_CORE_ID)
 {
   // Define PINS
-  pinMode(MOTOR_DRIVER_PIN_IN1, OUTPUT);
-  pinMode(MOTOR_DRIVER_PIN_IN2, OUTPUT);
-  pinMode(MOTOR_DRIVER_PIN_IN3, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN4, OUTPUT);
+  pinMode(MOTOR_DRIVER_PIN_IN3, OUTPUT);
+  pinMode(MOTOR_DRIVER_PIN_IN2, OUTPUT);
+  pinMode(MOTOR_DRIVER_PIN_IN1, OUTPUT);
 
-  pinMode(MOTOR_DRIVER_PIN_ENA, OUTPUT);
-  pinMode(MOTOR_DRIVER_PIN_ENB, OUTPUT);
+  this->currentState.value = MOTOR_DRIVER_MOVE_STOP_STATE_IDX;
+  this->currentState.xMutex = xSemaphoreCreateMutex();
 
-  analogWrite(MOTOR_DRIVER_PIN_ENA, this->maxSpeed);
-  analogWrite(MOTOR_DRIVER_PIN_ENB, this->maxSpeed);
-
-  this->xBinaryState = xSemaphoreCreateBinary();
-  this->currentState = MOTOR_DRIVER_MOVE_STOP_STATE_IDX;
+  this->speed.value = MOTOR_DRIVER_INIT_SPEED;
+  this->speed.xMutex = xSemaphoreCreateMutex();
 }
 
 MotorDriver::~MotorDriver() {}
 
 void MotorDriver::taskFn()
 {
-  if (this->xBinaryState != NULL)
+  if (xSemaphoreTake(this->currentState.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    if (xSemaphoreTake(this->xBinaryState, portMAX_DELAY) == pdTRUE)
+    digitalWrite(MOTOR_DRIVER_PIN_IN1, this->state[this->currentState.value][0]);
+    digitalWrite(MOTOR_DRIVER_PIN_IN2, this->state[this->currentState.value][1]);
+    digitalWrite(MOTOR_DRIVER_PIN_IN3, this->state[this->currentState.value][2]);
+    digitalWrite(MOTOR_DRIVER_PIN_IN4, this->state[this->currentState.value][3]);
+    ++this->currentState.value;
+    if (this->currentState.value > 4)
     {
-      digitalWrite(MOTOR_DRIVER_PIN_IN1, this->state[this->currentState][0]);
-      digitalWrite(MOTOR_DRIVER_PIN_IN2, this->state[this->currentState][1]);
-      digitalWrite(MOTOR_DRIVER_PIN_IN3, this->state[this->currentState][2]);
-      digitalWrite(MOTOR_DRIVER_PIN_IN4, this->state[this->currentState][3]);
+      this->currentState.value = 0;
     }
+    xSemaphoreGive(this->currentState.xMutex);
   }
-  else
+
+  if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    ESP_LOGE(this->NAME, "xBinaryState is NULL");
+    analogWrite(MOTOR_DRIVER_PIN_ENA, this->speed.value);
+    analogWrite(MOTOR_DRIVER_PIN_ENB, this->speed.value);
+    xSemaphoreGive(this->speed.xMutex);
   }
 }
 
 void MotorDriver::writeState(const uint8_t val)
 {
-  if (this->xBinaryState != NULL)
+  if (xSemaphoreTake(this->currentState.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    if (val != this->currentState)
+    if (val != this->currentState.value)
     {
-      this->currentState = val;
-      xSemaphoreGive(this->xBinaryState);
+      this->currentState.value = val;
     }
+    xSemaphoreGive(this->currentState.xMutex);
   }
-  else
+}
+
+void MotorDriver::setSpeed(const int value)
+{
+  if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    ESP_LOGE(this->NAME, "xBinaryState is NULL");
+    this->speed.value = value;
+    xSemaphoreGive(this->speed.xMutex);
   }
 }
 

@@ -22,6 +22,11 @@ void setup()
   log_e("Error");
 
   ESP_LOGI("SET UP", "Initializing...\n");
+
+  Controller *controller = new Controller();
+
+  controller->createTask();
+  controller->run();
 }
 
 void loop()

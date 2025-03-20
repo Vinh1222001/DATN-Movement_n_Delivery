@@ -7,29 +7,31 @@
 #include "base_module.hpp"
 #include "motor_driver.hpp"
 
+#define LINE_SENSOR_PIN_LEFT_MOST GPIO_NUM_33
+#define LINE_SENSOR_PIN_LEFT GPIO_NUM_39
+#define LINE_SENSOR_PIN_CENTER GPIO_NUM_36
+#define LINE_SENSOR_PIN_RIGHT GPIO_NUM_35
+#define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_34
+
 #define THRESHOLE 2000
-
-typedef struct
-{
-  int out1;
-  int out2;
-#if LINE_FOLLOWER_VERSION == 1
-  int out3;
-  int out4;
-  int out5;
-#endif
-} t_lineFollowerValues;
-
-extern t_lineFollowerValues line_reader;
 
 class LineFollower : public BaseModule
 {
 private:
-  t_lineFollowerValues line_reader;
+  struct
+  {
+    int out1;
+    int out2;
+#if LINE_FOLLOWER_VERSION == 1
+    int out3;
+    int out4;
+    int out5;
+#endif
+  } values;
+  const int factors[5] = {-4, -3, 2, 3, 4};
   MotorDriver *motorDriver = nullptr;
 
-  SemaphoreHandle_t xMutextIsArrived;
-  bool isItArrived = false;
+  SemaphoreMutexData<bool> isRobotArrived;
 
   void taskFn() override;
 
