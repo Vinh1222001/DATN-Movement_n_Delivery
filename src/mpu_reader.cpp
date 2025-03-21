@@ -8,12 +8,10 @@ MPUReader::MPUReader()
           MPU_READER_TASK_STACK_DEPTH_LEVEL,
           MPU_READER_TASK_PINNED_CORE_ID)
 {
-    // Config pins
+    this->init();
 }
 
-MPUReader::~MPUReader()
-{
-}
+MPUReader::~MPUReader() {}
 
 void MPUReader::setup()
 {
@@ -117,5 +115,3 @@ void MPUReader::taskFn()
 
     ESP_LOGI(this->NAME, "Temperature: %.2f degC\n", temp.temperature);
 }
-
-MPUReader *mpuReader;

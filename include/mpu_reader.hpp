@@ -11,7 +11,7 @@
 class MPUReader : public BaseModule
 {
 private:
-  Adafruit_MPU6050 *sensor;
+  Adafruit_MPU6050 *sensor = nullptr;
 
   void setup();
   void init();
@@ -21,7 +21,5 @@ public:
   MPUReader();
   ~MPUReader();
 };
-
-extern MPUReader *mpuReader;
 
 #endif
