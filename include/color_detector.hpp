@@ -1,12 +1,18 @@
 #pragma once
-#ifndef LINE_COLOR_TRACKER_HPP
-#define LINE_COLOR_TRACKER_HPP
+#ifndef COLOR_DETECTOR_HPP
+#define COLOR_DETECTOR_HPP
 
 #include <Arduino.h>
 #include <algorithm>
 #include "base_module.hpp"
 
-class LineColorTracker : public BaseModule
+#define COLOR_DETECTOR_PIN_S0 GPIO_NUM_0
+#define COLOR_DETECTOR_PIN_S1 GPIO_NUM_0
+#define COLOR_DETECTOR_PIN_S2 GPIO_NUM_0
+#define COLOR_DETECTOR_PIN_S3 GPIO_NUM_0
+#define COLOR_DETECTOR_PIN_SENSOR_OUT GPIO_NUM_0
+
+class ColorDetector : public BaseModule
 {
 private:
   static constexpr int MIN_RED = 5, MAX_RED = 38;
@@ -22,9 +28,8 @@ private:
   void taskFn() override;
 
 public:
-  LineColorTracker();
-  ~LineColorTracker();
+  ColorDetector();
+  ~ColorDetector();
 };
 
-extern LineColorTracker *lineColorTracker;
 #endif
