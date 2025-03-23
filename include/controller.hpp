@@ -5,7 +5,7 @@
 #include "base_module.hpp"
 #include "line_follower.hpp"
 #include "motor_driver.hpp"
-
+#include "web_server.hpp"
 class Controller : public BaseModule
 {
 private:
@@ -13,6 +13,7 @@ private:
 
   MotorDriver *motorDriver;
   LineFollower *lineFollower;
+  RWebServer *webServer;
 
   void stateMachine();
   void taskFn() override;

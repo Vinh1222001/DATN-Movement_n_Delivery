@@ -21,6 +21,7 @@ void Controller::stateMachine()
     ESP_LOGI(this->NAME, "Initializing components...");
     this->motorDriver = new MotorDriver();
     this->lineFollower = new LineFollower(this->motorDriver);
+    this->webServer = new RWebServer(this->lineFollower);
     this->state = CONTROLLER_STATE_MACHINE_START;
     break;
   case CONTROLLER_STATE_MACHINE_START:
@@ -28,8 +29,13 @@ void Controller::stateMachine()
 
     this->lineFollower->createTask();
     delay(5000);
+
     this->motorDriver->createTask();
     delay(5000);
+
+    this->webServer->createTask();
+    delay(5000);
+
     this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
 
     break;
@@ -49,6 +55,13 @@ void Controller::stateMachine()
       break;
     }
     this->motorDriver->run();
+
+    if (this->webServer == nullptr)
+    {
+      ESP_LOGI(this->NAME, "WEB SERVER is NULL");
+      break;
+    }
+    this->webServer->run();
 
     this->state = 0;
     break;
