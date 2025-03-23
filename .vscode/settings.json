@@ -294,6 +294,7 @@
     "algorithm": "cpp",
     "*.tcc": "cpp",
     "string": "cpp",
-    "string_view": "cpp"
+    "string_view": "cpp",
+    "new": "cpp"
   }
 }
