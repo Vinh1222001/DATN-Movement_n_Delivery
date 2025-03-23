@@ -9,6 +9,11 @@ MPUReader::MPUReader()
           MPU_READER_TASK_PINNED_CORE_ID)
 {
     this->init();
+    if (this->sensor != nullptr)
+    {
+        this->accel = this->sensor->getAccelerometerSensor();
+        this->gyro = this->sensor->getGyroSensor();
+    }
 }
 
 MPUReader::~MPUReader() {}
@@ -105,13 +110,56 @@ void MPUReader::init()
 
 void MPUReader::taskFn()
 {
-    sensors_event_t a, g, temp;
-    this->sensor->getEvent(&a, &g, &temp);
+    this->computeVelocity();
 
-    /* Print out the values */
-    ESP_LOGI(this->NAME, "Acceleration X: %.2f, Y: %.2f, Z: %.2f m/s^2\n", a.acceleration.x, a.acceleration.y, a.acceleration.z);
+    ESP_LOGI(
+        this->NAME,
+        "Velocity x: %.2f, y: %.2f, z: %.2f",
+        this->velocity.x,
+        this->velocity.y,
+        this->velocity.z);
+}
 
-    ESP_LOGI(this->NAME, "Rotation X: %.2f, Y: %.2f, Z: %.2f rad/s\n", g.gyro.x, g.gyro.y, g.gyro.z);
+void MPUReader::computeVelocity()
+{
+    sensors_event_t currAcel;
+    this->accel->getEvent(&currAcel);
 
-    ESP_LOGI(this->NAME, "Temperature: %.2f degC\n", temp.temperature);
+    float accelX = currAcel.acceleration.x; // Already in m/s²
+    float accelY = currAcel.acceleration.y;
+    float accelZ = currAcel.acceleration.z - 9.81; // Remove gravity
+
+    // Noise filtering (threshold to avoid drift)
+    if (abs(accelX) < ACCEL_THRESHOLD)
+        accelX = 0;
+    if (abs(accelY) < ACCEL_THRESHOLD)
+        accelY = 0;
+    if (abs(accelZ) < ACCEL_THRESHOLD)
+        accelZ = 0;
+
+    // Get time difference (dt) in seconds
+    unsigned long currentTime = esp_timer_get_time() / 1000; // Convert to milliseconds
+    float dt = (currentTime - this->lastTime) / 1000.0;      // Convert to seconds
+    this->lastTime = currentTime;
+
+    if (dt > 0 && dt < 1) // Prevent division errors
+    {
+        // Integrate acceleration to get velocity
+        this->velocity.x = accelX * dt;
+        this->velocity.y = accelY * dt;
+        this->velocity.z = accelZ * dt;
+    }
+
+    // Apply damping to simulate friction
+    this->velocity.x *= SIMULATE_FRICTION;
+    this->velocity.y *= SIMULATE_FRICTION;
+    this->velocity.z *= SIMULATE_FRICTION;
+
+    // If acceleration is almost zero, stop velocity
+    if (accelX == ACCEL_THRESHOLD)
+        this->velocity.x = 0;
+    if (accelY == ACCEL_THRESHOLD)
+        this->velocity.y = 0;
+    if (accelZ == ACCEL_THRESHOLD)
+        this->velocity.z = 0;
 }
