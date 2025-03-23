@@ -3,7 +3,7 @@
 #define MOTOR_DRIVER_HPP
 
 #include <Arduino.h>
-#include "global.hpp"
+#include "types.hpp"
 #include "base_module.hpp"
 
 #define MOTOR_DRIVER_PIN_IN4 GPIO_NUM_32

@@ -76,28 +76,28 @@ void LineFollower::taskFn()
   bool center = this->values.out3 > 0;
   bool right = (this->values.out4 + this->values.out5) > 0;
 
-  int decision = this->values.out1 * this->factors[0] + this->values.out1 * this->factors[1] + this->values.out3 * this->factors[2] + this->values.out4 * this->factors[3] + this->values.out5 * this->factors[4];
+  int decision = this->values.out1 * this->factors[0] + this->values.out2 * this->factors[1] + this->values.out3 * this->factors[2] + this->values.out4 * this->factors[3] + this->values.out5 * this->factors[4];
 
   // ESP_LOGI(TAG, "Signals: [%d, %d, %d]", left, center, right);
 
   if (decision == -1 || decision == 2 || decision == 5)
   {
     this->motorDriver->moveFoward();
-    this->motorDriver->setSpeed(120);
+    this->motorDriver->setSpeed(100);
     return;
   }
 
   if (decision < 0)
   {
     this->motorDriver->moveLeft();
-    this->motorDriver->setSpeed(120);
+    this->motorDriver->setSpeed(100);
     return;
   }
 
   if (decision > 1)
   {
     this->motorDriver->moveRight();
-    this->motorDriver->setSpeed(120);
+    this->motorDriver->setSpeed(100);
     return;
   }
 

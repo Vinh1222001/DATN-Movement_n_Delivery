@@ -3,7 +3,7 @@
 #define LINE_FOLLOWER_HPP
 
 #include <Arduino.h>
-
+#include "types.hpp"
 #include "base_module.hpp"
 #include "motor_driver.hpp"
 
