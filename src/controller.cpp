@@ -20,20 +20,26 @@ void Controller::stateMachine()
   case CONTROLLER_STATE_MACHINE_INIT:
     ESP_LOGI(this->NAME, "Initializing components...");
 
-    // this->motorDriver = new MotorDriver();
-    // this->lineFollower = new LineFollower(this->motorDriver);
+    this->motorDriver = new MotorDriver();
+    this->lineFollower = new LineFollower(this->motorDriver);
     this->colorDetector = new ColorDetector();
+    this->webServer = new RWebServer(this->lineFollower, this->colorDetector);
 
     this->state = CONTROLLER_STATE_MACHINE_START;
     break;
   case CONTROLLER_STATE_MACHINE_START:
     ESP_LOGI(this->NAME, "Creating component's tasks...");
 
-    // this->lineFollower->createTask();
-    // delay(5000);
-    // this->motorDriver->createTask();
-    // delay(5000);
+    this->lineFollower->createTask();
+    delay(5000);
+
+    this->motorDriver->createTask();
+    delay(5000);
+
     this->colorDetector->createTask();
+    delay(5000);
+
+    this->webServer->createTask();
     delay(5000);
 
     this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
@@ -42,19 +48,19 @@ void Controller::stateMachine()
   case CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT:
     ESP_LOGI(this->NAME, "Running component's tasks...");
 
-    // if (this->lineFollower == nullptr)
-    // {
-    //   ESP_LOGI(this->NAME, "LINE FOLLOWER is NULL");
-    //   break;
-    // }
-    // this->lineFollower->run();
+    if (this->lineFollower == nullptr)
+    {
+      ESP_LOGI(this->NAME, "LINE FOLLOWER is NULL");
+      break;
+    }
+    this->lineFollower->run();
 
-    // if (this->motorDriver == nullptr)
-    // {
-    //   ESP_LOGI(this->NAME, "MOTOR DRIVER is NULL");
-    //   break;
-    // }
-    // this->motorDriver->run();
+    if (this->motorDriver == nullptr)
+    {
+      ESP_LOGI(this->NAME, "MOTOR DRIVER is NULL");
+      break;
+    }
+    this->motorDriver->run();
 
     if (this->colorDetector == nullptr)
     {
@@ -62,6 +68,13 @@ void Controller::stateMachine()
       break;
     }
     this->colorDetector->run();
+
+    if (this->webServer == nullptr)
+    {
+      ESP_LOGI(this->NAME, "WEB SERVER is NULL");
+      break;
+    }
+    this->webServer->run();
 
     this->state = 0;
     break;

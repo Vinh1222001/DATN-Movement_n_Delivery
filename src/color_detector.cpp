@@ -98,3 +98,15 @@ void ColorDetector::taskFn()
 
   this->printColor();
 }
+
+ColorRGB ColorDetector::getColor()
+{
+  ColorRGB color = {0, 0, 0};
+  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    color = this->color.value;
+    xSemaphoreGive(this->color.xMutex);
+  }
+
+  return color;
+}

@@ -42,6 +42,8 @@ private:
 public:
   ColorDetector();
   ~ColorDetector();
+
+  ColorRGB getColor();
 };
 
 #endif
