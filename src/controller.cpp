@@ -19,11 +19,12 @@ void Controller::stateMachine()
   {
   case CONTROLLER_STATE_MACHINE_INIT:
     ESP_LOGI(this->NAME, "Initializing components...");
+
     // this->motorDriver = new MotorDriver();
     // this->lineFollower = new LineFollower(this->motorDriver);
-
     this->monitor = new Monitor();
     this->colorDetector = new ColorDetector(this->monitor);
+    // this->webServer = new RWebServer(this->lineFollower, this->colorDetector);
 
     this->state = CONTROLLER_STATE_MACHINE_START;
     break;
@@ -41,6 +42,9 @@ void Controller::stateMachine()
 
     this->colorDetector->createTask();
     delay(5000);
+
+    // this->webServer->createTask();
+    // delay(5000);
 
     this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
 

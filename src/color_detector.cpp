@@ -8,9 +8,18 @@ ColorDetector::ColorDetector(Monitor *monitor)
           COLOR_DETECTOR_TASK_STACK_DEPTH_LEVEL,
           COLOR_DETECTOR_TASK_PINNED_CORE_ID)
 {
+
+  this->color.value = {0, 0, 0};
+  this->color.xMutex = xSemaphoreCreateMutex();
+
+  pinMode(COLOR_DETECTOR_PIN_S0, OUTPUT);
+  pinMode(COLOR_DETECTOR_PIN_S1, OUTPUT);
   pinMode(COLOR_DETECTOR_PIN_S2, OUTPUT);
   pinMode(COLOR_DETECTOR_PIN_S3, OUTPUT);
   pinMode(COLOR_DETECTOR_PIN_SENSOR_OUT, INPUT);
+
+  digitalWrite(COLOR_DETECTOR_PIN_S0, HIGH);
+  digitalWrite(COLOR_DETECTOR_PIN_S1, LOW);
 
   this->monitor = monitor;
 }
@@ -37,21 +46,39 @@ int ColorDetector::getBlue()
   return pulseIn(COLOR_DETECTOR_PIN_SENSOR_OUT, LOW);
 }
 
-void ColorDetector::printColor(int red, int green, int blue)
+void ColorDetector::printColor()
 {
-  int maxValue = std::max({red, green, blue});
+  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    int maxValue = std::max(
+        {this->color.value.red,
+         this->color.value.green,
+         this->color.value.blue});
 
-  const char *color = (maxValue == red) ? "Red" : (maxValue == green) ? "Green"
-                                                                      : "Blue";
+    const char *color = (maxValue == this->color.value.red)
+                            ? "Red"
+                        : (maxValue == this->color.value.green)
+                            ? "Green"
+                            : "Blue";
 
-  // Print colored output
-  ESP_LOGI(this->NAME, "Color:%s, RGB code: %d, %d, %d\n", color, red, green, blue);
-  this->monitor->display(0, "Color: %s", color);
-  this->monitor->display(1, "RGB: %d, %d, %d", red, green, blue);
+    // Print colored output
+    ESP_LOGI(
+        this->NAME,
+        "Color:%s, RGB code: %d, %d, %d\n",
+        color,
+        this->color.value.red,
+        this->color.value.green,
+        this->color.value.blue);
+
+    this->monitor->display(0, "Color: %s", color);
+    this->monitor->display(1, "RGB: %d, %d, %d", this->color.value.red, this->color.value.green, this->color.value.blue);
+    xSemaphoreGive(this->color.xMutex);
+  }
 }
 
 void ColorDetector::taskFn()
 {
+
   int rawRed = constrain(this->getRed(), this->MIN_RED, this->MAX_RED);
   int red = map(rawRed, this->MIN_RED, this->MAX_RED, 255, 0);
   delay(COLOR_DETECTOR_FILTER_DELAY);
@@ -64,6 +91,26 @@ void ColorDetector::taskFn()
   int blue = map(rawBlue, this->MIN_BLUE, this->MAX_BLUE, 255, 0);
   delay(COLOR_DETECTOR_FILTER_DELAY);
 
-  // Serial.printf("Red: %d, Green: %d, Blue: %d\n\n", red, green, blue);
-  this->printColor(red, green, blue);
+  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    this->color.value = {
+        .red = red,
+        .green = green,
+        .blue = blue};
+    xSemaphoreGive(this->color.xMutex);
+  }
+
+  this->printColor();
+}
+
+ColorRGB ColorDetector::getColor()
+{
+  ColorRGB color = {0, 0, 0};
+  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    color = this->color.value;
+    xSemaphoreGive(this->color.xMutex);
+  }
+
+  return color;
 }
