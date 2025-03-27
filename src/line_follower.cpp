@@ -12,22 +12,16 @@ LineFollower::LineFollower(MotorDriver *motorDriver)
 {
   pinMode(LINE_SENSOR_PIN_LEFT_MOST, INPUT);
   pinMode(LINE_SENSOR_PIN_LEFT, INPUT);
-
-#if LINE_FOLLOWER_VERSION == 1
   pinMode(LINE_SENSOR_PIN_CENTER, INPUT);
   pinMode(LINE_SENSOR_PIN_RIGHT, INPUT);
   pinMode(LINE_SENSOR_PIN_RIGHT_MOST, INPUT);
-#endif
 
   this->signals.value = {
       .out1 = 0,
       .out2 = 0,
-#if LINE_FOLLOWER_VERSION == 1
       .out3 = 0,
       .out4 = 0,
-      .out5 = 0
-#endif
-  };
+      .out5 = 0};
 
   this->signals.xMutex = xSemaphoreCreateMutex();
 
@@ -50,11 +44,9 @@ void LineFollower::taskFn()
      */
     this->signals.value.out1 = digitalRead(LINE_SENSOR_PIN_LEFT_MOST);
     this->signals.value.out2 = digitalRead(LINE_SENSOR_PIN_LEFT);
-#if LINE_FOLLOWER_VERSION == 1
     this->signals.value.out3 = digitalRead(LINE_SENSOR_PIN_CENTER);
     this->signals.value.out4 = digitalRead(LINE_SENSOR_PIN_RIGHT);
     this->signals.value.out5 = digitalRead(LINE_SENSOR_PIN_RIGHT_MOST);
-#endif
 
     values.out1 = this->signals.value.out1;
     values.out2 = this->signals.value.out2;
@@ -69,22 +61,13 @@ void LineFollower::taskFn()
     ESP_LOGE(this->NAME, "Can't access signals");
   }
 
-#if LINE_FOLLOWER_VERSION == 2
-  ESP_LOGI(
-      this->NAME,
-      "Left: %d, Right: %d",
-      values.out1,
-      values.out2);
-#endif
-
-#if LINE_FOLLOWER_VERSION == 1
   ESP_LOGI(this->NAME, "Inputs: [%d, %d, %d, %d, %d]",
            values.out1,
            values.out2,
            values.out3,
            values.out4,
            values.out5);
-#endif
+
   if (values.out1 == 1 &&
       values.out2 == 1 &&
       values.out3 == 1 &&
@@ -95,6 +78,7 @@ void LineFollower::taskFn()
     this->motorDriver->setSpeed(0);
     return;
   }
+
   bool left = (values.out1 + values.out2) > 0;
   bool center = values.out3 > 0;
   bool right = (values.out4 + values.out5) > 0;

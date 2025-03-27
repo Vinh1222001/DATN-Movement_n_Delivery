@@ -19,11 +19,9 @@ struct LineFollowerSensorValues
 {
   int out1;
   int out2;
-#if LINE_FOLLOWER_VERSION == 1
   int out3;
   int out4;
   int out5;
-#endif
 };
 
 using LineFollowerSignals = SemaphoreMutexData<LineFollowerSensorValues>;
