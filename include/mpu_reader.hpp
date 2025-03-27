@@ -9,25 +9,45 @@
 #include "base_module.hpp"
 #include "types.hpp"
 
+#include "monitor.hpp"
+
 #define ACCEL_THRESHOLD 0.02
 #define SIMULATE_FRICTION 0.98
 
-struct Velocity
+struct VectorElements
 {
-  float x;
-  float y;
-  float z;
+  float x = 0;
+  float y = 0;
+  float z = 0;
+
+  float resultant() const
+  {
+    return sqrt(x * x + y * y + z * z);
+  }
 };
+
+using Velocity = VectorElements;
+using Acceleration = VectorElements;
+using Gyroscope = VectorElements;
+
+struct MotionState
+{
+  unsigned long lastTime = 0;
+  Velocity velocity;
+  Acceleration acceleration;
+  Gyroscope gyroscope;
+};
+
+using MpuReaderData = SemaphoreMutexData<MotionState>;
+
 class MPUReader : public BaseModule
 {
 private:
   Adafruit_MPU6050 *sensor = nullptr;
-  Adafruit_Sensor *accel = nullptr;
-  Adafruit_Sensor *gyro = nullptr;
 
-  unsigned long lastTime = 0;
+  Monitor *monitor = nullptr;
 
-  Velocity velocity = {0, 0, 0};
+  MpuReaderData data;
 
   void setup();
   void init();
@@ -35,9 +55,16 @@ private:
 
   void computeVelocity();
 
+  void setData();
+
 public:
-  MPUReader();
+  MPUReader(Monitor *monitor);
   ~MPUReader();
+
+  MotionState getMpuReaderData();
+  Gyroscope getGyroData();
+  Acceleration getAccelerationData();
+  Velocity getVelocity();
 };
 
 #endif

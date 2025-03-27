@@ -1,165 +1,242 @@
 #include "mpu_reader.hpp"
 
-MPUReader::MPUReader()
-    : BaseModule(
-          "MPU_READER",
-          MPU_READER_TASK_PRIORITY,
-          MPU_READER_TASK_DELAY,
-          MPU_READER_TASK_STACK_DEPTH_LEVEL,
-          MPU_READER_TASK_PINNED_CORE_ID)
+MPUReader::MPUReader(Monitor *monitor)
+		: BaseModule(
+					"MPU_READER",
+					MPU_READER_TASK_PRIORITY,
+					MPU_READER_TASK_DELAY,
+					MPU_READER_TASK_STACK_DEPTH_LEVEL,
+					MPU_READER_TASK_PINNED_CORE_ID)
 {
-    this->init();
-    if (this->sensor != nullptr)
-    {
-        this->accel = this->sensor->getAccelerometerSensor();
-        this->gyro = this->sensor->getGyroSensor();
-    }
+	this->init();
+
+	this->data.xMutex = xSemaphoreCreateMutex();
+	this->data.value.lastTime = millis();
+
+	this->monitor = monitor;
 }
 
 MPUReader::~MPUReader() {}
 
 void MPUReader::setup()
 {
-    const char *accRange, *gyroRange, *filterBandwidth;
+	const char *accRange, *gyroRange, *filterBandwidth;
 
-    this->sensor->setAccelerometerRange(MPU6050_RANGE_8_G);
-    switch (this->sensor->getAccelerometerRange())
-    {
-    case MPU6050_RANGE_2_G:
-        accRange = "+-2G";
-        break;
-    case MPU6050_RANGE_4_G:
-        accRange = "+-4G";
-        break;
-    case MPU6050_RANGE_8_G:
-        accRange = "+-8G";
-        break;
-    case MPU6050_RANGE_16_G:
-        accRange = "+-16G";
-        break;
-    }
+	this->sensor->setAccelerometerRange(MPU6050_RANGE_8_G);
+	switch (this->sensor->getAccelerometerRange())
+	{
+	case MPU6050_RANGE_2_G:
+		accRange = "+-2G";
+		break;
+	case MPU6050_RANGE_4_G:
+		accRange = "+-4G";
+		break;
+	case MPU6050_RANGE_8_G:
+		accRange = "+-8G";
+		break;
+	case MPU6050_RANGE_16_G:
+		accRange = "+-16G";
+		break;
+	}
 
-    ESP_LOGI(this->NAME, "Accelerometer range set to: %s\n", accRange);
+	ESP_LOGI(this->NAME, "Accelerometer range set to: %s\n", accRange);
 
-    // Setting Gyro Range
-    this->sensor->setGyroRange(MPU6050_RANGE_500_DEG);
-    switch (this->sensor->getGyroRange())
-    {
-    case MPU6050_RANGE_250_DEG:
-        gyroRange = "+- 250 deg/s";
-        break;
-    case MPU6050_RANGE_500_DEG:
-        gyroRange = "+- 500 deg/s";
-        break;
-    case MPU6050_RANGE_1000_DEG:
-        gyroRange = "+- 1000 deg/s";
-        break;
-    case MPU6050_RANGE_2000_DEG:
-        gyroRange = "+- 2000 deg/s";
-        break;
-    }
+	// Setting Gyro Range
+	this->sensor->setGyroRange(MPU6050_RANGE_500_DEG);
+	switch (this->sensor->getGyroRange())
+	{
+	case MPU6050_RANGE_250_DEG:
+		gyroRange = "+- 250 deg/s";
+		break;
+	case MPU6050_RANGE_500_DEG:
+		gyroRange = "+- 500 deg/s";
+		break;
+	case MPU6050_RANGE_1000_DEG:
+		gyroRange = "+- 1000 deg/s";
+		break;
+	case MPU6050_RANGE_2000_DEG:
+		gyroRange = "+- 2000 deg/s";
+		break;
+	}
 
-    ESP_LOGI(this->NAME, "Gyro range set to: %s\n", gyroRange);
+	ESP_LOGI(this->NAME, "Gyro range set to: %s\n", gyroRange);
 
-    // Setting Filter Bandwidth
-    this->sensor->setFilterBandwidth(MPU6050_BAND_5_HZ);
-    switch (this->sensor->getFilterBandwidth())
-    {
-    case MPU6050_BAND_260_HZ:
-        filterBandwidth = "260 Hz";
-        break;
-    case MPU6050_BAND_184_HZ:
-        filterBandwidth = "184 Hz";
-        break;
-    case MPU6050_BAND_94_HZ:
-        filterBandwidth = "94 Hz";
-        break;
-    case MPU6050_BAND_44_HZ:
-        filterBandwidth = "44 Hz";
-        break;
-    case MPU6050_BAND_21_HZ:
-        filterBandwidth = "21 Hz";
-        break;
-    case MPU6050_BAND_10_HZ:
-        filterBandwidth = "10 Hz";
-        break;
-    case MPU6050_BAND_5_HZ:
-        filterBandwidth = "5 Hz";
-        break;
-    }
+	// Setting Filter Bandwidth
+	this->sensor->setFilterBandwidth(MPU6050_BAND_5_HZ);
+	switch (this->sensor->getFilterBandwidth())
+	{
+	case MPU6050_BAND_260_HZ:
+		filterBandwidth = "260 Hz";
+		break;
+	case MPU6050_BAND_184_HZ:
+		filterBandwidth = "184 Hz";
+		break;
+	case MPU6050_BAND_94_HZ:
+		filterBandwidth = "94 Hz";
+		break;
+	case MPU6050_BAND_44_HZ:
+		filterBandwidth = "44 Hz";
+		break;
+	case MPU6050_BAND_21_HZ:
+		filterBandwidth = "21 Hz";
+		break;
+	case MPU6050_BAND_10_HZ:
+		filterBandwidth = "10 Hz";
+		break;
+	case MPU6050_BAND_5_HZ:
+		filterBandwidth = "5 Hz";
+		break;
+	}
 
-    ESP_LOGI(this->NAME, "Filter Bandwidth set to: %s\n", filterBandwidth);
+	ESP_LOGI(this->NAME, "Filter Bandwidth set to: %s\n", filterBandwidth);
 }
 
 void MPUReader::init()
 {
-    this->sensor = new Adafruit_MPU6050();
+	this->sensor = new Adafruit_MPU6050();
 
-    if (!this->sensor->begin())
-    {
-        ESP_LOGE(this->NAME, "Failed to find MPU6050 chip\n");
-        while (1)
-        {
-            delay(10);
-        }
-    }
-    ESP_LOGI(this->NAME, "MPU6050 Found!\n");
+	if (!this->sensor->begin())
+	{
+		ESP_LOGE(this->NAME, "Failed to find MPU6050 chip\n");
+		while (1)
+		{
+			delay(10);
+		}
+	}
+	ESP_LOGI(this->NAME, "MPU6050 Found!\n");
 
-    this->setup();
+	this->setup();
 }
 
 void MPUReader::taskFn()
 {
-    this->computeVelocity();
+	this->setData();
 
-    ESP_LOGI(
-        this->NAME,
-        "Velocity x: %.2f, y: %.2f, z: %.2f",
-        this->velocity.x,
-        this->velocity.y,
-        this->velocity.z);
+	ESP_LOGI(
+			this->NAME,
+			"Velocity x: %.2f, y: %.2f, z: %.2f",
+			this->data.value.velocity.x,
+			this->data.value.velocity.y,
+			this->data.value.velocity.z);
+
+	Acceleration accel = this->getAccelerationData();
+	Velocity vel = this->getVelocity();
+
+	this->monitor->display(2, "Acc x: %.2f, y: %.2f, z: %.2f", accel.x, accel.y, accel.z);
+	this->monitor->display(3, "Vel x: %.2f, y: %.2f, z: %.2f", vel.x, vel.y, vel.z);
 }
 
 void MPUReader::computeVelocity()
 {
-    sensors_event_t currAcel;
-    this->accel->getEvent(&currAcel);
+	float accelX = this->data.value.acceleration.x; // Already in m/s²
+	float accelY = this->data.value.acceleration.y;
+	float accelZ = this->data.value.acceleration.z - 9.81; // Remove gravity
 
-    float accelX = currAcel.acceleration.x; // Already in m/s²
-    float accelY = currAcel.acceleration.y;
-    float accelZ = currAcel.acceleration.z - 9.81; // Remove gravity
+	// Noise filtering (threshold to avoid drift)
+	if (abs(accelX) < ACCEL_THRESHOLD)
+		accelX = 0;
+	if (abs(accelY) < ACCEL_THRESHOLD)
+		accelY = 0;
+	if (abs(accelZ) < ACCEL_THRESHOLD)
+		accelZ = 0;
 
-    // Noise filtering (threshold to avoid drift)
-    if (abs(accelX) < ACCEL_THRESHOLD)
-        accelX = 0;
-    if (abs(accelY) < ACCEL_THRESHOLD)
-        accelY = 0;
-    if (abs(accelZ) < ACCEL_THRESHOLD)
-        accelZ = 0;
+	// Get time difference (dt) in seconds
+	unsigned long currentTime = esp_timer_get_time() / 1000;			 // Convert to milliseconds
+	float dt = (currentTime - this->data.value.lastTime) / 1000.0; // Convert to seconds
+	this->data.value.lastTime = currentTime;
 
-    // Get time difference (dt) in seconds
-    unsigned long currentTime = esp_timer_get_time() / 1000; // Convert to milliseconds
-    float dt = (currentTime - this->lastTime) / 1000.0;      // Convert to seconds
-    this->lastTime = currentTime;
+	if (dt > 0 && dt < 1) // Prevent division errors
+	{
+		// Integrate acceleration to get velocity
+		this->data.value.velocity.x = accelX * dt;
+		this->data.value.velocity.y = accelY * dt;
+		this->data.value.velocity.z = accelZ * dt;
+	}
 
-    if (dt > 0 && dt < 1) // Prevent division errors
-    {
-        // Integrate acceleration to get velocity
-        this->velocity.x = accelX * dt;
-        this->velocity.y = accelY * dt;
-        this->velocity.z = accelZ * dt;
-    }
+	// Apply damping to simulate friction
+	this->data.value.velocity.x *= SIMULATE_FRICTION;
+	this->data.value.velocity.y *= SIMULATE_FRICTION;
+	this->data.value.velocity.z *= SIMULATE_FRICTION;
 
-    // Apply damping to simulate friction
-    this->velocity.x *= SIMULATE_FRICTION;
-    this->velocity.y *= SIMULATE_FRICTION;
-    this->velocity.z *= SIMULATE_FRICTION;
+	// If acceleration is almost zero, stop data.value.velocity
+	if (accelX == ACCEL_THRESHOLD)
+		this->data.value.velocity.x = 0;
+	if (accelY == ACCEL_THRESHOLD)
+		this->data.value.velocity.y = 0;
+	if (accelZ == ACCEL_THRESHOLD)
+		this->data.value.velocity.z = 0;
+}
 
-    // If acceleration is almost zero, stop velocity
-    if (accelX == ACCEL_THRESHOLD)
-        this->velocity.x = 0;
-    if (accelY == ACCEL_THRESHOLD)
-        this->velocity.y = 0;
-    if (accelZ == ACCEL_THRESHOLD)
-        this->velocity.z = 0;
+void MPUReader::setData()
+{
+	if (this->sensor == nullptr)
+		return; // Tránh lỗi nếu sensor chưa được khởi tạo
+
+	if (xSemaphoreTake(this->data.xMutex, portMAX_DELAY) == pdTRUE)
+	{
+		sensors_event_t currAccel, currGyro, currTemp;
+		this->sensor->getEvent(&currAccel, &currGyro, &currTemp);
+
+		// Cập nhật dữ liệu gia tốc
+		this->data.value.acceleration.x = currAccel.acceleration.x;
+		this->data.value.acceleration.y = currAccel.acceleration.y;
+		this->data.value.acceleration.z = currAccel.acceleration.z;
+
+		// Cập nhật dữ liệu con quay hồi chuyển
+		this->data.value.gyroscope.x = currGyro.gyro.x;
+		this->data.value.gyroscope.y = currGyro.gyro.y;
+		this->data.value.gyroscope.z = currGyro.gyro.z;
+
+		this->computeVelocity();
+
+		xSemaphoreGive(this->data.xMutex);
+	}
+}
+
+MotionState MPUReader::getMpuReaderData()
+{
+	MotionState data;
+	if (xSemaphoreTake(this->data.xMutex, portMAX_DELAY) == pdTRUE)
+	{
+		data = this->data.value;
+		xSemaphoreGive(this->data.xMutex);
+	}
+
+	return data;
+}
+
+Gyroscope MPUReader::getGyroData()
+{
+	Gyroscope data;
+	if (xSemaphoreTake(this->data.xMutex, portMAX_DELAY) == pdTRUE)
+	{
+		data = this->data.value.gyroscope;
+		xSemaphoreGive(this->data.xMutex);
+	}
+
+	return data;
+}
+
+Acceleration MPUReader::getAccelerationData()
+{
+	Acceleration data;
+	if (xSemaphoreTake(this->data.xMutex, portMAX_DELAY) == pdTRUE)
+	{
+		data = this->data.value.acceleration;
+		xSemaphoreGive(this->data.xMutex);
+	}
+
+	return data;
+}
+
+Velocity MPUReader::getVelocity()
+{
+	Velocity data;
+	if (xSemaphoreTake(this->data.xMutex, portMAX_DELAY) == pdTRUE)
+	{
+		data = this->data.value.velocity;
+		xSemaphoreGive(this->data.xMutex);
+	}
+
+	return data;
 }

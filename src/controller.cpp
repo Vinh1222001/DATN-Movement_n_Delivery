@@ -19,26 +19,63 @@ void Controller::stateMachine()
   {
   case CONTROLLER_STATE_MACHINE_INIT:
     ESP_LOGI(this->NAME, "Initializing components...");
-    // this->motorDriver = new MotorDriver();
-    // this->lineFollower = new LineFollower(this->motorDriver);
-    this->mpuReader = new MPUReader();
+
+    // // this->motorDriver = new MotorDriver();
+    // // this->lineFollower = new LineFollower(this->motorDriver);
+    this->monitor = new Monitor();
+    this->colorDetector = new ColorDetector(this->monitor);
+    // this->webServer = new RWebServer(this->lineFollower, this->colorDetector);
+
+    this->mpuReader = new MPUReader(this->monitor);
     this->state = CONTROLLER_STATE_MACHINE_START;
     break;
   case CONTROLLER_STATE_MACHINE_START:
     ESP_LOGI(this->NAME, "Creating component's tasks...");
 
+    this->monitor->createTask();
+    delay(5000);
+
     // this->lineFollower->createTask();
     // delay(5000);
 
-    // this->motorDriver->createTask();
+    // // this->motorDriver->createTask();
+    // delay(5000);
+
+    this->colorDetector->createTask();
+    delay(5000);
+
+    // this->webServer->createTask();
     // delay(5000);
 
     this->mpuReader->createTask();
+    delay(5000);
+
     this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
 
     break;
   case CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT:
     ESP_LOGI(this->NAME, "Running component's tasks...");
+
+    if (this->monitor == nullptr)
+    {
+      ESP_LOGI(this->NAME, "MONITOR is NULL");
+      break;
+    }
+    this->monitor->run();
+
+    if (this->colorDetector == nullptr)
+    {
+      ESP_LOGI(this->NAME, "COLOR DETECTOR is NULL");
+      break;
+    }
+    this->colorDetector->run();
+
+    if (this->mpuReader == nullptr)
+    {
+      ESP_LOGI(this->NAME, "MPU READER is NULL");
+      break;
+    }
+    this->mpuReader->run();
 
     // if (this->lineFollower == nullptr)
     // {
@@ -52,14 +89,7 @@ void Controller::stateMachine()
     //   ESP_LOGI(this->NAME, "MOTOR DRIVER is NULL");
     //   break;
     // }
-    // this->motorDriver->run();
-
-    if (this->mpuReader == nullptr)
-    {
-      ESP_LOGI(this->NAME, "MPU READER is NULL");
-      break;
-    }
-    this->mpuReader->run();
+    // this->mpuReader->run();
 
     this->state = 0;
     break;
