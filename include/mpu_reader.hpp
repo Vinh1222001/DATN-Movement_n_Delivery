@@ -11,25 +11,19 @@
 
 #include "monitor.hpp"
 
-#define ACCEL_THRESHOLD 0.02
-#define SIMULATE_FRICTION 0.98
-
-struct VectorElements
-{
-  float x = 0;
-  float y = 0;
-  float z = 0;
-
-  float resultant() const
-  {
-    return sqrt(x * x + y * y + z * z);
-  }
-};
+#define MPU_READER_ACCELERATION_X_THRESHOLD 1.11
+#define MPU_READER_ACCELERATION_Y_THRESHOLD 0.13
+#define MPU_READER_ACCELERATION_Z_THRESHOLD 0
+#define MPU_READER_VELOCITY_X_THRESHOLD 0
+#define MPU_READER_VELOCITY_Y_THRESHOLD 0
+#define MPU_READER_VELOCITY_Z_THRESHOLD 0
+#define MPU_READER_GYROSCOPE_X_THRESHOLD 0.09
+#define MPU_READER_GYROSCOPE_Y_THRESHOLD 0.09
+#define MPU_READER_GYROSCOPE_Z_THRESHOLD 0
 
 using Velocity = VectorElements;
 using Acceleration = VectorElements;
 using Gyroscope = VectorElements;
-
 struct MotionState
 {
   unsigned long lastTime = 0;
@@ -49,6 +43,8 @@ private:
 
   MpuReaderData data;
 
+  template <typename T>
+  T setWithThreshold(T value, T threshold);
   void setup();
   void init();
   void taskFn() override;

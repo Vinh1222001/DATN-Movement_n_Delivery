@@ -121,9 +121,11 @@ void MPUReader::taskFn()
 
 	Acceleration accel = this->getAccelerationData();
 	Velocity vel = this->getVelocity();
+	Gyroscope gyro = this->getGyroData();
 
 	this->monitor->display(2, "Acc x: %.2f, y: %.2f, z: %.2f", accel.x, accel.y, accel.z);
 	this->monitor->display(3, "Vel x: %.2f, y: %.2f, z: %.2f", vel.x, vel.y, vel.z);
+	this->monitor->display(4, "Gyro x: %.2f, y: %.2f, z: %.2f", gyro.x, gyro.y, gyro.z);
 }
 
 void MPUReader::computeVelocity()
@@ -132,14 +134,6 @@ void MPUReader::computeVelocity()
 	float accelY = this->data.value.acceleration.y;
 	float accelZ = this->data.value.acceleration.z - 9.81; // Remove gravity
 
-	// Noise filtering (threshold to avoid drift)
-	if (abs(accelX) < ACCEL_THRESHOLD)
-		accelX = 0;
-	if (abs(accelY) < ACCEL_THRESHOLD)
-		accelY = 0;
-	if (abs(accelZ) < ACCEL_THRESHOLD)
-		accelZ = 0;
-
 	// Get time difference (dt) in seconds
 	unsigned long currentTime = esp_timer_get_time() / 1000;			 // Convert to milliseconds
 	float dt = (currentTime - this->data.value.lastTime) / 1000.0; // Convert to seconds
@@ -147,24 +141,25 @@ void MPUReader::computeVelocity()
 
 	if (dt > 0 && dt < 1) // Prevent division errors
 	{
-		// Integrate acceleration to get velocity
-		this->data.value.velocity.x = accelX * dt;
-		this->data.value.velocity.y = accelY * dt;
-		this->data.value.velocity.z = accelZ * dt;
+		this->data.value.velocity.x =
+				this->setWithThreshold<float>(
+						accelX,
+						MPU_READER_VELOCITY_X_THRESHOLD);
+		this->data.value.velocity.y =
+				this->setWithThreshold<float>(
+						accelY,
+						MPU_READER_VELOCITY_Y_THRESHOLD);
+		this->data.value.velocity.z =
+				this->setWithThreshold<float>(
+						accelZ,
+						MPU_READER_VELOCITY_Z_THRESHOLD);
 	}
+}
 
-	// Apply damping to simulate friction
-	this->data.value.velocity.x *= SIMULATE_FRICTION;
-	this->data.value.velocity.y *= SIMULATE_FRICTION;
-	this->data.value.velocity.z *= SIMULATE_FRICTION;
-
-	// If acceleration is almost zero, stop data.value.velocity
-	if (accelX == ACCEL_THRESHOLD)
-		this->data.value.velocity.x = 0;
-	if (accelY == ACCEL_THRESHOLD)
-		this->data.value.velocity.y = 0;
-	if (accelZ == ACCEL_THRESHOLD)
-		this->data.value.velocity.z = 0;
+template <typename T>
+T MPUReader::setWithThreshold(T value, T threshold)
+{
+	return abs(value) <= threshold ? 0 : value;
 }
 
 void MPUReader::setData()
@@ -178,14 +173,34 @@ void MPUReader::setData()
 		this->sensor->getEvent(&currAccel, &currGyro, &currTemp);
 
 		// Cập nhật dữ liệu gia tốc
-		this->data.value.acceleration.x = currAccel.acceleration.x;
-		this->data.value.acceleration.y = currAccel.acceleration.y;
-		this->data.value.acceleration.z = currAccel.acceleration.z;
+		this->data.value.acceleration.x =
+				this->setWithThreshold<float>(
+						currAccel.acceleration.x,
+						MPU_READER_ACCELERATION_X_THRESHOLD);
+
+		this->data.value.acceleration.y =
+				this->setWithThreshold<float>(
+						currAccel.acceleration.y,
+						MPU_READER_ACCELERATION_Y_THRESHOLD);
+		this->data.value.acceleration.z =
+				this->setWithThreshold<float>(
+						currAccel.acceleration.z,
+						MPU_READER_ACCELERATION_Z_THRESHOLD);
 
 		// Cập nhật dữ liệu con quay hồi chuyển
-		this->data.value.gyroscope.x = currGyro.gyro.x;
-		this->data.value.gyroscope.y = currGyro.gyro.y;
-		this->data.value.gyroscope.z = currGyro.gyro.z;
+		this->data.value.gyroscope.x =
+				this->setWithThreshold<float>(
+						currGyro.gyro.x,
+						MPU_READER_GYROSCOPE_X_THRESHOLD);
+
+		this->data.value.gyroscope.y =
+				this->setWithThreshold<float>(
+						currGyro.gyro.x,
+						MPU_READER_GYROSCOPE_Y_THRESHOLD);
+		this->data.value.gyroscope.z =
+				this->setWithThreshold<float>(
+						currGyro.gyro.x,
+						MPU_READER_GYROSCOPE_Z_THRESHOLD);
 
 		this->computeVelocity();
 

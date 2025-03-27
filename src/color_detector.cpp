@@ -78,7 +78,6 @@ void ColorDetector::printColor()
 
 void ColorDetector::taskFn()
 {
-
   int rawRed = constrain(this->getRed(), this->MIN_RED, this->MAX_RED);
   int red = map(rawRed, this->MIN_RED, this->MAX_RED, 255, 0);
   delay(COLOR_DETECTOR_FILTER_DELAY);
