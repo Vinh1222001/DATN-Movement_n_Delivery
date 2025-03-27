@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <algorithm>
 #include "base_module.hpp"
+#include "monitor.hpp"
 
 #define COLOR_DETECTOR_PIN_S0 GPIO_NUM_0
 #define COLOR_DETECTOR_PIN_S1 GPIO_NUM_0
@@ -19,6 +20,8 @@ private:
   static constexpr int MIN_GREEN = 4, MAX_GREEN = 42;
   static constexpr int MIN_BLUE = 4, MAX_BLUE = 35;
 
+  Monitor *monitor;
+
   int getRed();
   int getGreen();
   int getBlue();
@@ -28,7 +31,7 @@ private:
   void taskFn() override;
 
 public:
-  ColorDetector();
+  ColorDetector(Monitor *monitor);
   ~ColorDetector();
 };
 

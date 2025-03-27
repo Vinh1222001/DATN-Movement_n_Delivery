@@ -5,7 +5,8 @@
 #include "base_module.hpp"
 #include "line_follower.hpp"
 #include "motor_driver.hpp"
-
+#include "monitor.hpp"
+#include "color_detector.hpp"
 class Controller : public BaseModule
 {
 private:
@@ -13,6 +14,9 @@ private:
 
   MotorDriver *motorDriver;
   LineFollower *lineFollower;
+  ColorDetector *colorDetector;
+
+  Monitor *monitor;
 
   void stateMachine();
   void taskFn() override;
