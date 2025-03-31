@@ -75,7 +75,6 @@ void LineFollower::taskFn()
       values.out5 == 1)
   {
     this->motorDriver->stop();
-    this->motorDriver->setSpeed(0);
     return;
   }
 
@@ -101,26 +100,22 @@ void LineFollower::taskFn()
   if (decision == -1 || decision == 2 || decision == 5)
   {
     this->motorDriver->moveFoward();
-    this->motorDriver->setSpeed(100);
     return;
   }
 
   if (decision < 0)
   {
     this->motorDriver->moveLeft();
-    this->motorDriver->setSpeed(100);
     return;
   }
 
   if (decision > 1)
   {
     this->motorDriver->moveRight();
-    this->motorDriver->setSpeed(100);
     return;
   }
 
   this->motorDriver->stop();
-  this->motorDriver->setSpeed(0);
 }
 
 bool LineFollower::isArrived()

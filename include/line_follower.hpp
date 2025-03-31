@@ -13,8 +13,6 @@
 #define LINE_SENSOR_PIN_RIGHT GPIO_NUM_35
 #define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_34
 
-#define THRESHOLE 2000
-
 struct LineFollowerSensorValues
 {
   int out1;

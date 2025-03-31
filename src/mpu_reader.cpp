@@ -98,10 +98,7 @@ void MPUReader::init()
 	if (!this->sensor->begin())
 	{
 		ESP_LOGE(this->NAME, "Failed to find MPU6050 chip\n");
-		while (1)
-		{
-			delay(10);
-		}
+		delay(1000);
 	}
 	ESP_LOGI(this->NAME, "MPU6050 Found!\n");
 

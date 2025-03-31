@@ -22,7 +22,7 @@ private:
   ColorDetector *colorDetector;
 
   Monitor *monitor;
-  MPUReader *mpuReader;
+  // MPUReader *mpuReader;
 
   void stateMachine();
   void taskFn() override;
