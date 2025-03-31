@@ -89,8 +89,6 @@ void LineFollower::taskFn()
       values.out4 * this->factors[3] +
       values.out5 * this->factors[4];
 
-  // ESP_LOGI(TAG, "Signals: [%d, %d, %d]", left, center, right);
-
   if (this->motorDriver == nullptr)
   {
     ESP_LOGE(this->NAME, "Can't find MOTOR DRIVER");

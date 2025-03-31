@@ -49,9 +49,9 @@ void Monitor::taskFn()
 void Monitor::display(int line, const char *format, ...)
 {
   if (line < 0 || line >= this->ui.value.numOflines)
-    return; // Bỏ qua nếu dòng không hợp lệ
+    return;
 
-  char buffer[64]; // Buffer chứa nội dung chuỗi
+  char buffer[64];
   va_list args;
   va_start(args, format);
   vsnprintf(buffer, sizeof(buffer), format, args);
@@ -59,7 +59,7 @@ void Monitor::display(int line, const char *format, ...)
 
   if (xSemaphoreTake(this->ui.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    if (this->ui.value.buffer[line] != buffer) // Chỉ cập nhật nếu nội dung thay đổi
+    if (this->ui.value.buffer[line] != buffer)
     {
       this->ui.value.buffer[line] = std::string(buffer);
     }

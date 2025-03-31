@@ -61,7 +61,6 @@ void ColorDetector::printColor()
                             ? "Green"
                             : "Blue";
 
-    // Print colored output
     ESP_LOGI(
         this->NAME,
         "Color:%s, RGB code: %d, %d, %d\n",

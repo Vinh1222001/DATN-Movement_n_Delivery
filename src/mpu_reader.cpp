@@ -41,7 +41,6 @@ void MPUReader::setup()
 
 	ESP_LOGI(this->NAME, "Accelerometer range set to: %s\n", accRange);
 
-	// Setting Gyro Range
 	this->sensor->setGyroRange(MPU6050_RANGE_500_DEG);
 	switch (this->sensor->getGyroRange())
 	{
@@ -61,7 +60,6 @@ void MPUReader::setup()
 
 	ESP_LOGI(this->NAME, "Gyro range set to: %s\n", gyroRange);
 
-	// Setting Filter Bandwidth
 	this->sensor->setFilterBandwidth(MPU6050_BAND_5_HZ);
 	switch (this->sensor->getFilterBandwidth())
 	{
@@ -127,16 +125,15 @@ void MPUReader::taskFn()
 
 void MPUReader::computeVelocity()
 {
-	float accelX = this->data.value.acceleration.x; // Already in m/s²
+	float accelX = this->data.value.acceleration.x;
 	float accelY = this->data.value.acceleration.y;
-	float accelZ = this->data.value.acceleration.z - 9.81; // Remove gravity
+	float accelZ = this->data.value.acceleration.z - 9.81;
 
-	// Get time difference (dt) in seconds
-	unsigned long currentTime = esp_timer_get_time() / 1000;			 // Convert to milliseconds
-	float dt = (currentTime - this->data.value.lastTime) / 1000.0; // Convert to seconds
+	unsigned long currentTime = esp_timer_get_time() / 1000;
+	float dt = (currentTime - this->data.value.lastTime) / 1000.0;
 	this->data.value.lastTime = currentTime;
 
-	if (dt > 0 && dt < 1) // Prevent division errors
+	if (dt > 0 && dt < 1)
 	{
 		this->data.value.velocity.x =
 				this->setWithThreshold<float>(
@@ -162,14 +159,13 @@ T MPUReader::setWithThreshold(T value, T threshold)
 void MPUReader::setData()
 {
 	if (this->sensor == nullptr)
-		return; // Tránh lỗi nếu sensor chưa được khởi tạo
+		return;
 
 	if (xSemaphoreTake(this->data.xMutex, portMAX_DELAY) == pdTRUE)
 	{
 		sensors_event_t currAccel, currGyro, currTemp;
 		this->sensor->getEvent(&currAccel, &currGyro, &currTemp);
 
-		// Cập nhật dữ liệu gia tốc
 		this->data.value.acceleration.x =
 				this->setWithThreshold<float>(
 						currAccel.acceleration.x,
@@ -184,7 +180,6 @@ void MPUReader::setData()
 						currAccel.acceleration.z,
 						MPU_READER_ACCELERATION_Z_THRESHOLD);
 
-		// Cập nhật dữ liệu con quay hồi chuyển
 		this->data.value.gyroscope.x =
 				this->setWithThreshold<float>(
 						currGyro.gyro.x,

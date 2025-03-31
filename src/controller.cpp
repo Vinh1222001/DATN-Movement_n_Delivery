@@ -22,9 +22,6 @@ void Controller::stateMachine()
 
     this->monitor = new Monitor();
     this->colorDetector = new ColorDetector(this->monitor);
-    // this->webServer = new RWebServer(this->lineFollower, this->colorDetector);
-
-    // this->mpuReader = new MPUReader(this->monitor);
     this->motorDriver = new MotorDriver();
     this->lineFollower = new LineFollower(this->motorDriver);
     this->state = CONTROLLER_STATE_MACHINE_START;
@@ -37,12 +34,6 @@ void Controller::stateMachine()
 
     this->colorDetector->createTask();
     delay(5000);
-
-    // this->webServer->createTask();
-    // delay(5000);
-
-    // this->mpuReader->createTask();
-    // delay(5000);
 
     this->lineFollower->createTask();
     delay(5000);
@@ -69,14 +60,6 @@ void Controller::stateMachine()
       break;
     }
     this->colorDetector->run();
-
-    // if (this->mpuReader == nullptr)
-    // {
-    //   ESP_LOGI(this->NAME, "MPU READER is NULL");
-    //   break;
-    // }
-    // this->mpuReader->run();
-
     if (this->lineFollower == nullptr)
     {
       ESP_LOGI(this->NAME, "LINE FOLLOWER is NULL");
