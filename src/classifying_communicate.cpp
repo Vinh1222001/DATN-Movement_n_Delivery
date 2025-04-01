@@ -21,10 +21,9 @@ ClassifyingCommunicate::~ClassifyingCommunicate() {}
 
 void ClassifyingCommunicate::taskFn()
 {
-  // Gửi dữ liệu qua UART2
+
   this->communicate->println("Hello from ESP32!");
 
-  // Nhận dữ liệu từ UART2
   if (this->communicate->available())
   {
     String message = this->communicate->readString();

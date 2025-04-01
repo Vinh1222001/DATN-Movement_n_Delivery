@@ -1,12 +1,12 @@
 #include "color_detector.hpp"
 
-ColorDetector::ColorDetector()
+ColorDetector::ColorDetector(Monitor *monitor)
     : BaseModule(
           "COLOR_DETECTOR",
-          LINE_COLOR_TRACKER_TASK_PRIORITY,
-          LINE_COLOR_TRACKER_TASK_DELAY,
-          LINE_COLOR_TRACKER_TASK_STACK_DEPTH_LEVEL,
-          LINE_COLOR_TRACKER_TASK_PINNED_CORE_ID)
+          COLOR_DETECTOR_TASK_PRIORITY,
+          COLOR_DETECTOR_TASK_DELAY,
+          COLOR_DETECTOR_TASK_STACK_DEPTH_LEVEL,
+          COLOR_DETECTOR_TASK_PINNED_CORE_ID)
 {
 
   this->color.value = {0, 0, 0};
@@ -20,6 +20,8 @@ ColorDetector::ColorDetector()
 
   digitalWrite(COLOR_DETECTOR_PIN_S0, HIGH);
   digitalWrite(COLOR_DETECTOR_PIN_S1, LOW);
+
+  this->monitor = monitor;
 }
 ColorDetector::~ColorDetector() {}
 
@@ -59,7 +61,6 @@ void ColorDetector::printColor()
                             ? "Green"
                             : "Blue";
 
-    // Print colored output
     ESP_LOGI(
         this->NAME,
         "Color:%s, RGB code: %d, %d, %d\n",
@@ -68,24 +69,25 @@ void ColorDetector::printColor()
         this->color.value.green,
         this->color.value.blue);
 
+    this->monitor->display(0, "Color: %s", color);
+    this->monitor->display(1, "RGB: %d, %d, %d", this->color.value.red, this->color.value.green, this->color.value.blue);
     xSemaphoreGive(this->color.xMutex);
   }
 }
 
 void ColorDetector::taskFn()
 {
-
   int rawRed = constrain(this->getRed(), this->MIN_RED, this->MAX_RED);
   int red = map(rawRed, this->MIN_RED, this->MAX_RED, 255, 0);
-  delay(LINE_COLOR_TRACKER_FILTER_DELAY);
+  delay(COLOR_DETECTOR_FILTER_DELAY);
 
   int rawGreen = constrain(this->getGreen(), this->MIN_GREEN, this->MAX_GREEN);
   int green = map(rawGreen, this->MIN_GREEN, this->MAX_GREEN, 255, 0);
-  delay(LINE_COLOR_TRACKER_FILTER_DELAY);
+  delay(COLOR_DETECTOR_FILTER_DELAY);
 
   int rawBlue = constrain(this->getBlue(), this->MIN_BLUE, this->MAX_BLUE);
   int blue = map(rawBlue, this->MIN_BLUE, this->MAX_BLUE, 255, 0);
-  delay(LINE_COLOR_TRACKER_FILTER_DELAY);
+  delay(COLOR_DETECTOR_FILTER_DELAY);
 
   if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
   {

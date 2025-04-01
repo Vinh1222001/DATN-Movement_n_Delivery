@@ -3,14 +3,10 @@
 #define SHIFT_REGISTER_HPP
 
 #include <Arduino.h>
-
-// #include "/base_module.hpp"
-
 class ShiftRegister
 {
 private:
   int value;
-  // void taskFn() override;
   uint8_t genValue(const bool signals[8]);
 
 public:

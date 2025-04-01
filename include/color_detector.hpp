@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "base_module.hpp"
 #include "types.hpp"
+#include "monitor.hpp"
 
 #define COLOR_DETECTOR_PIN_S0 GPIO_NUM_4
 #define COLOR_DETECTOR_PIN_S1 GPIO_NUM_5
@@ -31,6 +32,8 @@ private:
 
   ColorDetectorValue color;
 
+  Monitor *monitor;
+
   int getRed();
   int getGreen();
   int getBlue();
@@ -40,7 +43,7 @@ private:
   void taskFn() override;
 
 public:
-  ColorDetector();
+  ColorDetector(Monitor *monitor);
   ~ColorDetector();
 
   ColorRGB getColor();
