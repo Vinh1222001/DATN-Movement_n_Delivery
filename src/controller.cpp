@@ -60,6 +60,7 @@ void Controller::stateMachine()
       break;
     }
     this->colorDetector->run();
+
     if (this->lineFollower == nullptr)
     {
       ESP_LOGI(this->NAME, "LINE FOLLOWER is NULL");
