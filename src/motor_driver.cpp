@@ -1,7 +1,5 @@
 #include "motor_driver.hpp"
 
-int step = 0;
-
 MotorDriver::MotorDriver()
     : BaseModule(
           "MOTOR_DRIVER",
@@ -10,7 +8,6 @@ MotorDriver::MotorDriver()
           MOTOR_DRIVER_TASK_STACK_DEPTH_LEVEL,
           MOTOR_DRIVER_TASK_PINNED_CORE_ID)
 {
-  // Define PINS
   pinMode(MOTOR_DRIVER_PIN_IN4, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN3, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN2, OUTPUT);
@@ -19,11 +16,19 @@ MotorDriver::MotorDriver()
   this->currentState.value = MOTOR_DRIVER_MOVE_STOP_STATE_IDX;
   this->currentState.xMutex = xSemaphoreCreateMutex();
 
-  this->speed.value = MOTOR_DRIVER_INIT_SPEED;
+  this->speed.value.left = MOTOR_DRIVER_INIT_SPEED;
+  this->speed.value.right = MOTOR_DRIVER_INIT_SPEED;
   this->speed.xMutex = xSemaphoreCreateMutex();
 }
 
-MotorDriver::~MotorDriver() {}
+MotorDriver::~MotorDriver()
+{
+  vSemaphoreDelete(this->currentState.xMutex);
+  vSemaphoreDelete(this->speed.xMutex);
+  this->currentState.xMutex = nullptr;
+  this->speed.xMutex = nullptr;
+  this->currentState.value = 0;
+}
 
 void MotorDriver::taskFn()
 {
@@ -43,8 +48,8 @@ void MotorDriver::taskFn()
 
   if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    analogWrite(MOTOR_DRIVER_PIN_ENA, this->speed.value);
-    analogWrite(MOTOR_DRIVER_PIN_ENB, this->speed.value);
+    analogWrite(MOTOR_DRIVER_PIN_ENA, this->speed.value.left);
+    analogWrite(MOTOR_DRIVER_PIN_ENB, this->speed.value.right);
     xSemaphoreGive(this->speed.xMutex);
   }
 }
@@ -61,11 +66,22 @@ void MotorDriver::writeState(const uint8_t val)
   }
 }
 
+void MotorDriver::writeSpeed(const int left, const int right)
+{
+  if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    analogWrite(MOTOR_DRIVER_PIN_ENA, this->speed.value.left);
+    analogWrite(MOTOR_DRIVER_PIN_ENB, this->speed.value.right);
+    xSemaphoreGive(this->speed.xMutex);
+  }
+}
+
 void MotorDriver::setSpeed(const int value)
 {
   if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    this->speed.value = value;
+    this->speed.value.left = value;
+    this->speed.value.right = value;
     xSemaphoreGive(this->speed.xMutex);
   }
 }
@@ -74,28 +90,33 @@ void MotorDriver::moveFoward()
 {
   ESP_LOGI("MOTOR_DRIVER", "Move forward");
   this->writeState(MOTOR_DRIVER_MOVE_FORWARD_STATE_IDX);
+  this->setSpeed(120);
 }
 
 void MotorDriver::moveBackward()
 {
   ESP_LOGI("MOTOR_DRIVER", "Move backward");
   this->writeState(MOTOR_DRIVER_MOVE_BACKWARD_STATE_IDX);
+  this->setSpeed(120);
 }
 
 void MotorDriver::moveLeft()
 {
   ESP_LOGI("MOTOR_DRIVER", "Move left");
   this->writeState(MOTOR_DRIVER_MOVE_LEFT_STATE_IDX);
+  this->setSpeed(120);
 }
 
 void MotorDriver::moveRight()
 {
   ESP_LOGI("MOTOR_DRIVER", "Move right");
   this->writeState(MOTOR_DRIVER_MOVE_RIGHT_STATE_IDX);
+  this->setSpeed(120);
 }
 
 void MotorDriver::stop()
 {
   ESP_LOGI("MOTOR_DRIVER", "Stopped");
   this->writeState(MOTOR_DRIVER_MOVE_STOP_STATE_IDX);
+  this->setSpeed(MOTOR_DRIVER_INIT_SPEED);
 }

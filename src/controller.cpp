@@ -19,6 +19,9 @@ void Controller::stateMachine()
   {
   case CONTROLLER_STATE_MACHINE_INIT:
     ESP_LOGI(this->NAME, "Initializing components...");
+
+    this->monitor = new Monitor();
+    this->colorDetector = new ColorDetector(this->monitor);
     this->motorDriver = new MotorDriver();
     this->lineFollower = new LineFollower(this->motorDriver);
     this->state = CONTROLLER_STATE_MACHINE_START;
@@ -26,16 +29,37 @@ void Controller::stateMachine()
   case CONTROLLER_STATE_MACHINE_START:
     ESP_LOGI(this->NAME, "Creating component's tasks...");
 
+    this->monitor->createTask();
+    delay(5000);
+
+    this->colorDetector->createTask();
+    delay(5000);
+
     this->lineFollower->createTask();
     delay(5000);
+
     this->motorDriver->createTask();
     delay(5000);
+
     this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
 
     break;
   case CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT:
     ESP_LOGI(this->NAME, "Running component's tasks...");
 
+    if (this->monitor == nullptr)
+    {
+      ESP_LOGI(this->NAME, "MONITOR is NULL");
+      break;
+    }
+    this->monitor->run();
+
+    if (this->colorDetector == nullptr)
+    {
+      ESP_LOGI(this->NAME, "COLOR DETECTOR is NULL");
+      break;
+    }
+    this->colorDetector->run();
     if (this->lineFollower == nullptr)
     {
       ESP_LOGI(this->NAME, "LINE FOLLOWER is NULL");

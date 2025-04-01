@@ -13,25 +13,26 @@
 #define LINE_SENSOR_PIN_RIGHT GPIO_NUM_35
 #define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_34
 
-#define THRESHOLE 2000
+struct LineFollowerSensorValues
+{
+  int out1;
+  int out2;
+  int out3;
+  int out4;
+  int out5;
+};
+
+using LineFollowerSignals = SemaphoreMutexData<LineFollowerSensorValues>;
 
 class LineFollower : public BaseModule
 {
 private:
-  struct
-  {
-    int out1;
-    int out2;
-#if LINE_FOLLOWER_VERSION == 1
-    int out3;
-    int out4;
-    int out5;
-#endif
-  } values;
   const int factors[5] = {-4, -3, 2, 3, 4};
-  MotorDriver *motorDriver = nullptr;
 
+  LineFollowerSignals signals;
   SemaphoreMutexData<bool> isRobotArrived;
+
+  MotorDriver *motorDriver = nullptr;
 
   void taskFn() override;
 
@@ -40,6 +41,7 @@ public:
   ~LineFollower();
 
   bool isArrived();
+  LineFollowerSensorValues getLineFollowerValues();
 };
 
 #endif
