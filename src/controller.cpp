@@ -8,7 +8,7 @@ Controller::Controller()
           CONTROLLER_TASK_STACK_DEPTH_LEVEL,
           CONTROLLER_TASK_PINNED_CORE_ID)
 {
-  this->state = CONTROLLER_STATE_MACHINE_INIT;
+  this->state = INIT;
 }
 
 Controller::~Controller() {}
@@ -17,34 +17,22 @@ void Controller::stateMachine()
 {
   switch (this->state)
   {
-  case CONTROLLER_STATE_MACHINE_INIT:
+  case INIT:
     ESP_LOGI(this->NAME, "Initializing components...");
-
-    this->monitor = new Monitor();
-    this->colorDetector = new ColorDetector(this->monitor);
-    this->motorDriver = new MotorDriver();
-    this->lineFollower = new LineFollower(this->motorDriver);
-    this->state = CONTROLLER_STATE_MACHINE_START;
+    this->init();
+    delay(5000);
+    ESP_LOGI(this->NAME, "Components initialized.");
+    this->state = START;
     break;
-  case CONTROLLER_STATE_MACHINE_START:
+  case START:
     ESP_LOGI(this->NAME, "Creating component's tasks...");
 
-    this->monitor->createTask();
-    delay(5000);
+    this->start();
 
-    this->colorDetector->createTask();
-    delay(5000);
-
-    this->lineFollower->createTask();
-    delay(5000);
-
-    this->motorDriver->createTask();
-    delay(5000);
-
-    this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
+    this->state = PICKUP_TRANSIT;
 
     break;
-  case CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT:
+  case PICKUP_TRANSIT:
     ESP_LOGI(this->NAME, "Running component's tasks...");
 
     if (this->monitor == nullptr)
@@ -75,15 +63,15 @@ void Controller::stateMachine()
     }
     this->motorDriver->run();
 
-    this->state = 0;
+    this->state = IDLE;
     break;
-  case CONTROLLER_STATE_MACHINE_DELIVERY:
+  case DELIVERY:
     break;
-  case CONTROLLER_STATE_MACHINE_PICKUP:
+  case PICKUP:
     break;
-  case CONTROLLER_STATE_MACHINE_DROP_DOWN:
+  case DROP_DOWN:
     break;
-  case CONTROLLER_STATE_MACHINE_CLASSIFY:
+  case CLASSIFY:
     break;
   }
 }
@@ -93,10 +81,48 @@ void Controller::taskFn()
   this->stateMachine();
 }
 
-void Controller::setState(int state)
+void Controller::setState(RobotState state)
 {
   if (state != this->state)
   {
     this->state = state;
   }
+}
+
+RobotState Controller::getState()
+{
+  ESP_LOGI(this->NAME, "Current state: %d", this->state);
+  return this->state;
+}
+
+void Controller::runComponent(BaseModule *component)
+{
+  if (component == nullptr)
+  {
+    ESP_LOGI(this->NAME, "%s is NULL", component->getName());
+    return;
+  }
+  component->run();
+}
+
+void Controller::init()
+{
+  this->state = INIT;
+  this->monitor = new Monitor();
+  this->colorDetector = new ColorDetector(this->monitor);
+  this->motorDriver = new MotorDriver();
+  this->lineFollower = new LineFollower(this->motorDriver);
+}
+
+void Controller::start()
+{
+  this->state = START;
+  this->monitor->createTask();
+  delay(5000);
+  this->colorDetector->createTask();
+  delay(5000);
+  this->lineFollower->createTask();
+  delay(5000);
+  this->motorDriver->createTask();
+  delay(5000);
 }
