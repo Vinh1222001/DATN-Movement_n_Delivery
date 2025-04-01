@@ -14,11 +14,20 @@
 #define COLOR_DETECTOR_PIN_S3 GPIO_NUM_19
 #define COLOR_DETECTOR_PIN_SENSOR_OUT GPIO_NUM_14
 
+enum ColorSet
+{
+  RED,
+  GREEN,
+  BLUE,
+  YELLOW,
+  NONE
+};
 struct ColorRGB
 {
   int red;
   int green;
   int blue;
+  enum ColorSet color;
 };
 
 using ColorDetectorValue = SemaphoreMutexData<ColorRGB>;
@@ -37,6 +46,8 @@ private:
   int getRed();
   int getGreen();
   int getBlue();
+
+  ColorSet detectColor(int r, int g, int b);
 
   void printColor();
 
