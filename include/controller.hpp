@@ -37,15 +37,16 @@ private:
 
   Monitor *monitor;
 
-  void init();
-  void prepareTasks();
-  void start();
-  void pickupTransit();
-  void pickup();
-  void dropoffTransit();
-  void dropoff();
-  void classify();
-  void idle();
+  bool init();
+  bool prepareTasks();
+  bool start();
+  bool pickupTransit();
+  bool pickup();
+  bool dropoffTransit();
+  bool dropoff();
+  bool classify();
+  bool idle();
+  bool setNextArea(ColorSet area);
 
   void runComponent(BaseModule *component);
   void stateMachine();

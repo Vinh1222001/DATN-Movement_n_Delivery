@@ -20,8 +20,11 @@ void Controller::stateMachine()
   case INIT:
 
     ESP_LOGI(this->NAME, "Initializing components...");
-    this->init();
-    delay(5000);
+    if (!this->init())
+    {
+      break;
+    }
+    delay(3000);
     ESP_LOGI(this->NAME, "Components initialized.");
     this->state = START;
 
@@ -29,50 +32,58 @@ void Controller::stateMachine()
   case PREPARE:
 
     ESP_LOGI(this->NAME, "Creating component's tasks...");
-    this->prepareTasks();
+    if (!this->prepareTasks())
+    {
+      ESP_LOGE(this->NAME, "Failed to create tasks");
+      break;
+    }
+    ESP_LOGI(this->NAME, "Component's tasks created.");
+    this->state = START;
+    delay(3000);
 
     break;
   case START:
 
     ESP_LOGI(this->NAME, "Starting component's tasks...");
-    this->start();
+    if (!this->start())
+    {
+      ESP_LOGE(this->NAME, "Failed to start tasks");
+      break;
+    }
     this->state = PICKUP_TRANSIT;
 
     break;
   case PICKUP_TRANSIT:
-
-    if (this->colorDetector == nullptr &&
-        this->colorDetector->getColor().color == NONE)
-      break;
-
-    if (this->colorDetector->getColor().color == nextArea)
+    if (this->pickupTransit())
     {
       this->state = PICKUP;
     }
-
     break;
   case DROPOFF_TRANSIT:
 
-    if (this->colorDetector == nullptr)
+    if (this->dropoffTransit())
     {
-      break;
+      this->state = DROPOFF;
     }
-
-    if (this->colorDetector->getColor() == NONE)
-    {
-      break;
-    }
-    this->state = DROPOFF;
     break;
   case PICKUP:
-    this->state = CLASSIFY;
+    if (this->pickup())
+    {
+      this->state = CLASSIFY;
+    }
     break;
 
   case DROPOFF:
-    this->state = PICKUP_TRANSIT;
+    if (this->dropoff())
+    {
+      this->state = PICKUP_TRANSIT;
+    }
     break;
   case CLASSIFY:
-    this->state = DROPOFF_TRANSIT;
+    if (this->classify())
+    {
+      this->state = DROPOFF_TRANSIT;
+    }
     break;
   }
 }
@@ -106,18 +117,27 @@ void Controller::runComponent(BaseModule *component)
   component->run();
 }
 
-void Controller::init()
+bool Controller::init()
 {
-  this->state = INIT;
   this->monitor = new Monitor();
   this->colorDetector = new ColorDetector(this->monitor);
   this->motorDriver = new MotorDriver();
   this->lineFollower = new LineFollower(this->motorDriver);
+
+  if (this->monitor == nullptr ||
+      this->colorDetector == nullptr ||
+      this->motorDriver == nullptr ||
+      this->lineFollower == nullptr)
+  {
+    ESP_LOGE(this->NAME, "One or more components are NULL");
+    return false;
+  }
+
+  return true;
 }
 
-void Controller::prepareTasks()
+bool Controller::prepareTasks()
 {
-  this->state = START;
   this->monitor->createTask();
   delay(5000);
   this->colorDetector->createTask();
@@ -126,9 +146,11 @@ void Controller::prepareTasks()
   delay(5000);
   this->motorDriver->createTask();
   delay(5000);
+
+  return true;
 }
 
-void Controller::start()
+bool Controller::start()
 {
   ESP_LOGI(this->NAME, "Running component's tasks...");
 
@@ -136,4 +158,56 @@ void Controller::start()
   this->runComponent(this->colorDetector);
   this->runComponent(this->lineFollower);
   this->runComponent(this->motorDriver);
+
+  return true;
+}
+
+bool Controller::pickup()
+{
+  ESP_LOGI(this->NAME, "Pickup");
+  if (this->colorDetector == nullptr &&
+      this->colorDetector->getColor().color == NONE)
+    return false;
+
+  return this->colorDetector->getColor().color == this->nextArea;
+}
+
+bool Controller::dropoff()
+{
+  ESP_LOGI(this->NAME, "Dropoff");
+  return true;
+}
+
+bool Controller::classify()
+{
+  ESP_LOGI(this->NAME, "Classify");
+  return true;
+}
+
+bool Controller::idle()
+{
+  ESP_LOGI(this->NAME, "Idle");
+  return true;
+}
+
+bool Controller::pickupTransit()
+{
+  ESP_LOGI(this->NAME, "Pickup Transit");
+  return true;
+}
+
+bool Controller::dropoffTransit()
+{
+  ESP_LOGI(this->NAME, "Dropoff Transit");
+  if (this->colorDetector == nullptr)
+  {
+    return false;
+  }
+  return this->colorDetector->getColor().color != NONE;
+}
+
+bool Controller::setNextArea(ColorSet area)
+{
+  this->nextArea = area;
+  return true;
 }
