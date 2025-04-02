@@ -13,17 +13,20 @@
 enum RobotState
 {
   INIT = 200,
+  PREPARE,
   START,
   PICKUP_TRANSIT,
   PICKUP,
   DROPOFF_TRANSIT,
   DROPOFF,
+  CLASSIFY,
   IDLE,
 };
 
 class Controller : public BaseModule
 {
 private:
+  ColorSet nextArea;
   RobotState state;
 
   MotorDriver *motorDriver;
@@ -35,11 +38,13 @@ private:
   Monitor *monitor;
 
   void init();
+  void prepareTasks();
   void start();
   void pickupTransit();
   void pickup();
   void dropoffTransit();
   void dropoff();
+  void classify();
   void idle();
 
   void runComponent(BaseModule *component);

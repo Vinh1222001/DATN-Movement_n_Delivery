@@ -21,7 +21,6 @@ ClassifyingCommunicate::~ClassifyingCommunicate() {}
 
 void ClassifyingCommunicate::taskFn()
 {
-
   this->communicate->println("Hello from ESP32!");
 
   if (this->communicate->available())
