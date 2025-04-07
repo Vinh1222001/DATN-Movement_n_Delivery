@@ -42,9 +42,10 @@ bool ClassifyingCommunicate::begin()
   return true;
 }
 
-bool ClassifyingCommunicate::send(const Types::EspNowMessage<bool> &data)
+bool ClassifyingCommunicate::send(const bool &data)
 {
-  esp_err_t result = esp_now_send(peerMac, reinterpret_cast<const uint8_t *>(&data), sizeof(data));
+  const Types::EspNowMessage _msg = SetUtils::createEspNowMessage<bool>(data);
+  esp_err_t result = esp_now_send(peerMac, reinterpret_cast<const uint8_t *>(&_msg), sizeof(_msg));
   if (result == ESP_OK)
   {
     ESP_LOGI(this->NAME, "Sent data successfully");
@@ -83,11 +84,10 @@ void ClassifyingCommunicate::onDataRecv(const uint8_t *mac, const uint8_t *incom
            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], len);
 
   // Chuyển đổi dữ liệu thành Message
-  const Types::EspNowMessage<String> *packet = reinterpret_cast<const Types::EspNowMessage<String> *>(incomingData);
+  const Types::EspNowMessage *packet = reinterpret_cast<const Types::EspNowMessage *>(incomingData);
   ESP_LOGI(this->NAME, "Data Received: Id: %s, Value: %s", packet->id, packet->content);
   // TODO: Bạn có thể thêm logic xử lý dữ liệu ở đây
-  const Types::EspNowMessage<bool> response = SetUtils::createEspNowMessage(true); // Ví dụ phản hồi thay đổi giá trị
-  send(response);
+  send(true);
 }
 
 void ClassifyingCommunicate::taskFn()

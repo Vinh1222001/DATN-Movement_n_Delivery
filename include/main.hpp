@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include "esp_log.h"
 #include "classifying_communicate.hpp"
-#include "util.wifi.hpp"
+#include "utils/wifi.hpp"
 #include "constants.hpp"
 
 // #include "line_follower.hpp"

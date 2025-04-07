@@ -6,16 +6,12 @@
 #include <esp_now.h>
 #include "esp_log.h"
 #include "types.hpp"
-#include "util.set.hpp"
-
+#include "utils/set.hpp"
 class ClassifyingCommunicate : public BaseModule
 {
 private:
   static ClassifyingCommunicate *instance; // Static pointer to the current instance
   const uint8_t peerMac[6] = {0x08, 0xd1, 0xf9, 0x38, 0xa8, 0xac};
-
-  Types::EspNowMessage<String *> resMessage;
-  Types::EspNowMessage<bool> sendMessage;
 
   // Static callbacks
   static void onDataSentStatic(const uint8_t *mac_addr, esp_now_send_status_t status);
@@ -31,7 +27,7 @@ public:
   ~ClassifyingCommunicate();
 
   bool begin();
-  bool send(const Types::EspNowMessage<bool> &data);
+  bool send(const bool &data);
 };
 
 #endif
