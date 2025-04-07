@@ -4,19 +4,18 @@
 
 #include "base_module.hpp"
 #include <esp_now.h>
-#include <WiFi.h>
 #include "esp_log.h"
+#include "types.hpp"
+#include "util.set.hpp"
 
-struct Message
-{
-  int id;
-  float value;
-};
 class ClassifyingCommunicate : public BaseModule
 {
 private:
   static ClassifyingCommunicate *instance; // Static pointer to the current instance
-  uint8_t peerMac[6];
+  const uint8_t peerMac[6] = {0x08, 0xd1, 0xf9, 0x38, 0xa8, 0xac};
+
+  Types::EspNowMessage<String *> resMessage;
+  Types::EspNowMessage<bool> sendMessage;
 
   // Static callbacks
   static void onDataSentStatic(const uint8_t *mac_addr, esp_now_send_status_t status);
@@ -31,8 +30,8 @@ public:
   ClassifyingCommunicate();
   ~ClassifyingCommunicate();
 
-  bool begin(const uint8_t *peerAddress);
-  bool send(const uint8_t *data, size_t len);
+  bool begin();
+  bool send(const Types::EspNowMessage<bool> &data);
 };
 
 #endif

@@ -23,14 +23,21 @@ void setup()
 
   ESP_LOGI("SET UP", "Initializing...\n");
 
+  if (!WifiUtil::initWifi(Constants::WIFI_SSID.c_str(), Constants::WIFI_PASSWORD.c_str(), true))
+  {
+    ESP_LOGE(WifiUtil::TAG, "Can't connect to wifif");
+    while (true)
+    {
+      delay(1000);
+    }
+  }
   // Controller *controller = new Controller();
 
   // controller->createTask();
   // controller->run();
 
   ClassifyingCommunicate *communicate = new ClassifyingCommunicate();
-  const uint8_t peerMac[6] = {0x08, 0xd1, 0xf9, 0x38, 0xa8, 0xac};
-  if (communicate->begin(peerMac))
+  if (communicate->begin())
   {
     ESP_LOGI("ESP32 B", "ESP-NOW Initialized Successfully");
   }

@@ -31,7 +31,7 @@ private:
   const int factors[5] = {-4, -3, 2, 3, 4};
   MotorDriver *motorDriver = nullptr;
 
-  SemaphoreMutexData<bool> isRobotArrived;
+  Types::SemaphoreMutexData<bool> isRobotArrived;
 
   void taskFn() override;
 

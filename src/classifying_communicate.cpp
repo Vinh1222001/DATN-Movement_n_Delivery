@@ -12,16 +12,13 @@ ClassifyingCommunicate::ClassifyingCommunicate()
 
 ClassifyingCommunicate::~ClassifyingCommunicate() {}
 
-bool ClassifyingCommunicate::begin(const uint8_t *peerAddress)
+bool ClassifyingCommunicate::begin()
 {
-  WiFi.mode(WIFI_STA); // ESP32 WROOM mode: WiFi Station
   if (esp_now_init() != ESP_OK)
   {
     ESP_LOGE(this->NAME, "ESP-NOW init failed");
     return false;
   }
-
-  memcpy(peerMac, peerAddress, 6);
 
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, peerMac, 6);
@@ -45,9 +42,9 @@ bool ClassifyingCommunicate::begin(const uint8_t *peerAddress)
   return true;
 }
 
-bool ClassifyingCommunicate::send(const uint8_t *data, size_t len)
+bool ClassifyingCommunicate::send(const Types::EspNowMessage<bool> &data)
 {
-  esp_err_t result = esp_now_send(peerMac, data, len);
+  esp_err_t result = esp_now_send(peerMac, reinterpret_cast<const uint8_t *>(&data), sizeof(data));
   if (result == ESP_OK)
   {
     ESP_LOGI(this->NAME, "Sent data successfully");
@@ -86,12 +83,11 @@ void ClassifyingCommunicate::onDataRecv(const uint8_t *mac, const uint8_t *incom
            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], len);
 
   // Chuyển đổi dữ liệu thành Message
-  const Message *packet = reinterpret_cast<const Message *>(incomingData);
-  ESP_LOGI(this->NAME, "Data Received: Id: %d, Value: %.2f", packet->id, packet->value);
-  delay(5000);
+  const Types::EspNowMessage<String> *packet = reinterpret_cast<const Types::EspNowMessage<String> *>(incomingData);
+  ESP_LOGI(this->NAME, "Data Received: Id: %s, Value: %s", packet->id, packet->content);
   // TODO: Bạn có thể thêm logic xử lý dữ liệu ở đây
-  Message response = {packet->id + 1, packet->value * 2.0f}; // Ví dụ phản hồi thay đổi giá trị
-  send(reinterpret_cast<uint8_t *>(&response), sizeof(response));
+  const Types::EspNowMessage<bool> response = SetUtils::createEspNowMessage(true); // Ví dụ phản hồi thay đổi giá trị
+  send(response);
 }
 
 void ClassifyingCommunicate::taskFn()

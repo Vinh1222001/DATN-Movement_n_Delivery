@@ -16,8 +16,8 @@
 
 #define MOTOR_DRIVER_INIT_SPEED 0
 
-using MotorState = SemaphoreMutexData<uint8_t>;
-using MotorSpeed = SemaphoreMutexData<int>;
+using MotorState = Types::SemaphoreMutexData<uint8_t>;
+using MotorSpeed = Types::SemaphoreMutexData<int>;
 
 class MotorDriver : public BaseModule
 {
