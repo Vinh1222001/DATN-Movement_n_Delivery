@@ -23,10 +23,21 @@ void setup()
 
   ESP_LOGI("SET UP", "Initializing...\n");
 
-  Controller *controller = new Controller();
+  // Controller *controller = new Controller();
 
-  controller->createTask();
-  controller->run();
+  // controller->createTask();
+  // controller->run();
+
+  ClassifyingCommunicate *communicate = new ClassifyingCommunicate();
+  const uint8_t peerMac[6] = {0x08, 0xd1, 0xf9, 0x38, 0xa8, 0xac};
+  if (communicate->begin(peerMac))
+  {
+    ESP_LOGI("ESP32 B", "ESP-NOW Initialized Successfully");
+  }
+  else
+  {
+    ESP_LOGE("ESP32 B", "Failed to initialize ESP-NOW");
+  }
 }
 
 void loop()
