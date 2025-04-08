@@ -1,12 +1,13 @@
 #include "motor_driver.hpp"
 
-MotorDriver::MotorDriver()
+MotorDriver::MotorDriver(MPUReader *mpuReader = nullptr)
     : BaseModule(
           "MOTOR_DRIVER",
           MOTOR_DRIVER_TASK_PRIORITY,
           MOTOR_DRIVER_TASK_DELAY,
           MOTOR_DRIVER_TASK_STACK_DEPTH_LEVEL,
-          MOTOR_DRIVER_TASK_PINNED_CORE_ID)
+          MOTOR_DRIVER_TASK_PINNED_CORE_ID),
+      mpuReader(mpuReader)
 {
   pinMode(MOTOR_DRIVER_PIN_IN4, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN3, OUTPUT);
@@ -76,12 +77,22 @@ void MotorDriver::writeSpeed(const int left, const int right)
   }
 }
 
-void MotorDriver::setSpeed(const int value)
+void MotorDriver::setSpeed(const int value, bool force = false)
 {
   if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    this->speed.value.left = value;
-    this->speed.value.right = value;
+    if (force)
+    {
+      this->speed.value.left = value;
+      this->speed.value.right = value;
+    }
+    else
+    {
+      Velocity vel = this->mpuReader->getVelocity();
+      float pwm = (MOTOR_DRIVER_VELOCITY_STANDARD * MOTOR_DRIVER_PWM_STANDARD) / sqrt(pow(vel.x, 2) + pow(vel.y, 2));
+      this->speed.value.left = pwm;
+      this->speed.value.right = pwm;
+    }
     xSemaphoreGive(this->speed.xMutex);
   }
 }
@@ -118,5 +129,5 @@ void MotorDriver::stop()
 {
   ESP_LOGI("MOTOR_DRIVER", "Stopped");
   this->writeState(MOTOR_DRIVER_MOVE_STOP_STATE_IDX);
-  this->setSpeed(MOTOR_DRIVER_INIT_SPEED);
+  this->setSpeed(MOTOR_DRIVER_INIT_SPEED, true);
 }

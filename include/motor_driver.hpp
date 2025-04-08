@@ -3,6 +3,7 @@
 #define MOTOR_DRIVER_HPP
 
 #include <Arduino.h>
+#include "math.h"
 #include "types.hpp"
 #include "base_module.hpp"
 #include "PID.hpp"
@@ -18,6 +19,9 @@
 #define MOTOR_DRIVER_PIN_ENB GPIO_NUM_12
 
 #define MOTOR_DRIVER_INIT_SPEED 0
+
+#define MOTOR_DRIVER_VELOCITY_STANDARD 1.0
+#define MOTOR_DRIVER_PWM_STANDARD 120
 
 using MotorState = SemaphoreMutexData<uint8_t>;
 
@@ -48,15 +52,17 @@ private:
       {1, 0, 1, 0},
       {0, 1, 0, 1}};
 
+  MPUReader *mpuReader = nullptr;
+
   void taskFn() override;
   void writeState(const uint8_t val);
   void writeSpeed(const int left, const int right);
 
 public:
-  MotorDriver();
+  MotorDriver(MPUReader *mpuReader = nullptr);
   ~MotorDriver();
 
-  void setSpeed(const int value);
+  void setSpeed(const int value, bool force = false);
 
   void moveFoward();
   void moveBackward();

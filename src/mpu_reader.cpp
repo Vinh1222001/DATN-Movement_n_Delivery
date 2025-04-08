@@ -1,12 +1,12 @@
 #include "mpu_reader.hpp"
 
 MPUReader::MPUReader(Monitor *monitor)
-		: BaseModule(
-					"MPU_READER",
-					MPU_READER_TASK_PRIORITY,
-					MPU_READER_TASK_DELAY,
-					MPU_READER_TASK_STACK_DEPTH_LEVEL,
-					MPU_READER_TASK_PINNED_CORE_ID)
+	: BaseModule(
+		  "MPU_READER",
+		  MPU_READER_TASK_PRIORITY,
+		  MPU_READER_TASK_DELAY,
+		  MPU_READER_TASK_STACK_DEPTH_LEVEL,
+		  MPU_READER_TASK_PINNED_CORE_ID)
 {
 	this->init();
 
@@ -108,11 +108,11 @@ void MPUReader::taskFn()
 	this->setData();
 
 	ESP_LOGI(
-			this->NAME,
-			"Velocity x: %.2f, y: %.2f, z: %.2f",
-			this->data.value.velocity.x,
-			this->data.value.velocity.y,
-			this->data.value.velocity.z);
+		this->NAME,
+		"Velocity x: %.2f, y: %.2f, z: %.2f",
+		this->data.value.velocity.x,
+		this->data.value.velocity.y,
+		this->data.value.velocity.z);
 
 	Acceleration accel = this->getAccelerationData();
 	Velocity vel = this->getVelocity();
@@ -136,17 +136,17 @@ void MPUReader::computeVelocity()
 	if (dt > 0 && dt < 1)
 	{
 		this->data.value.velocity.x =
-				this->setWithThreshold<float>(
-						accelX,
-						MPU_READER_VELOCITY_X_THRESHOLD);
+			this->setWithThreshold<float>(
+				accelX * dt,
+				MPU_READER_VELOCITY_X_THRESHOLD);
 		this->data.value.velocity.y =
-				this->setWithThreshold<float>(
-						accelY,
-						MPU_READER_VELOCITY_Y_THRESHOLD);
+			this->setWithThreshold<float>(
+				accelY * dt,
+				MPU_READER_VELOCITY_Y_THRESHOLD);
 		this->data.value.velocity.z =
-				this->setWithThreshold<float>(
-						accelZ,
-						MPU_READER_VELOCITY_Z_THRESHOLD);
+			this->setWithThreshold<float>(
+				accelZ * dt,
+				MPU_READER_VELOCITY_Z_THRESHOLD);
 	}
 }
 
@@ -167,32 +167,32 @@ void MPUReader::setData()
 		this->sensor->getEvent(&currAccel, &currGyro, &currTemp);
 
 		this->data.value.acceleration.x =
-				this->setWithThreshold<float>(
-						currAccel.acceleration.x,
-						MPU_READER_ACCELERATION_X_THRESHOLD);
+			this->setWithThreshold<float>(
+				currAccel.acceleration.x,
+				MPU_READER_ACCELERATION_X_THRESHOLD);
 
 		this->data.value.acceleration.y =
-				this->setWithThreshold<float>(
-						currAccel.acceleration.y,
-						MPU_READER_ACCELERATION_Y_THRESHOLD);
+			this->setWithThreshold<float>(
+				currAccel.acceleration.y,
+				MPU_READER_ACCELERATION_Y_THRESHOLD);
 		this->data.value.acceleration.z =
-				this->setWithThreshold<float>(
-						currAccel.acceleration.z,
-						MPU_READER_ACCELERATION_Z_THRESHOLD);
+			this->setWithThreshold<float>(
+				currAccel.acceleration.z,
+				MPU_READER_ACCELERATION_Z_THRESHOLD);
 
 		this->data.value.gyroscope.x =
-				this->setWithThreshold<float>(
-						currGyro.gyro.x,
-						MPU_READER_GYROSCOPE_X_THRESHOLD);
+			this->setWithThreshold<float>(
+				currGyro.gyro.x,
+				MPU_READER_GYROSCOPE_X_THRESHOLD);
 
 		this->data.value.gyroscope.y =
-				this->setWithThreshold<float>(
-						currGyro.gyro.x,
-						MPU_READER_GYROSCOPE_Y_THRESHOLD);
+			this->setWithThreshold<float>(
+				currGyro.gyro.x,
+				MPU_READER_GYROSCOPE_Y_THRESHOLD);
 		this->data.value.gyroscope.z =
-				this->setWithThreshold<float>(
-						currGyro.gyro.x,
-						MPU_READER_GYROSCOPE_Z_THRESHOLD);
+			this->setWithThreshold<float>(
+				currGyro.gyro.x,
+				MPU_READER_GYROSCOPE_Z_THRESHOLD);
 
 		this->computeVelocity();
 
