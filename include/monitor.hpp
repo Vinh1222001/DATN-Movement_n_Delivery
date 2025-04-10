@@ -23,7 +23,7 @@ struct Screen
   std::vector<std::string> buffer;
 };
 
-using UI = SemaphoreMutexData<Screen>;
+using UI = Types::SemaphoreMutexData<Screen>;
 
 class Monitor : public BaseModule
 {

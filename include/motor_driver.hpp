@@ -23,7 +23,7 @@
 #define MOTOR_DRIVER_VELOCITY_STANDARD 1.0
 #define MOTOR_DRIVER_PWM_STANDARD 120
 
-using MotorState = SemaphoreMutexData<uint8_t>;
+using MotorState = Types::SemaphoreMutexData<uint8_t>;
 
 struct Speed
 {
@@ -31,7 +31,7 @@ struct Speed
   int right;
 };
 
-using MotorSpeed = SemaphoreMutexData<Speed>;
+using MotorSpeed = Types::SemaphoreMutexData<Speed>;
 
 class MotorDriver : public BaseModule
 {

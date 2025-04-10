@@ -22,7 +22,7 @@ struct LineFollowerSensorValues
   int out5;
 };
 
-using LineFollowerSignals = SemaphoreMutexData<LineFollowerSensorValues>;
+using LineFollowerSignals = Types::SemaphoreMutexData<LineFollowerSensorValues>;
 
 class LineFollower : public BaseModule
 {
@@ -30,7 +30,7 @@ private:
   const int factors[5] = {-4, -3, 2, 3, 4};
 
   LineFollowerSignals signals;
-  SemaphoreMutexData<bool> isRobotArrived;
+  Types::SemaphoreMutexData<bool> isRobotArrived;
 
   MotorDriver *motorDriver = nullptr;
 

@@ -1,6 +1,6 @@
 #include "motor_driver.hpp"
 
-MotorDriver::MotorDriver(MPUReader *mpuReader = nullptr)
+MotorDriver::MotorDriver(MPUReader *mpuReader)
     : BaseModule(
           "MOTOR_DRIVER",
           MOTOR_DRIVER_TASK_PRIORITY,
@@ -77,7 +77,7 @@ void MotorDriver::writeSpeed(const int left, const int right)
   }
 }
 
-void MotorDriver::setSpeed(const int value, bool force = false)
+void MotorDriver::setSpeed(const int value, bool force)
 {
   if (xSemaphoreTake(this->speed.xMutex, portMAX_DELAY) == pdTRUE)
   {

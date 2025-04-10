@@ -21,9 +21,9 @@
 #define MPU_READER_GYROSCOPE_Y_THRESHOLD 0.09
 #define MPU_READER_GYROSCOPE_Z_THRESHOLD 0
 
-using Velocity = VectorElements;
-using Acceleration = VectorElements;
-using Gyroscope = VectorElements;
+using Velocity = Types::VectorElements;
+using Acceleration = Types::VectorElements;
+using Gyroscope = Types::VectorElements;
 struct MotionState
 {
   unsigned long lastTime = 0;
@@ -32,7 +32,7 @@ struct MotionState
   Gyroscope gyroscope;
 };
 
-using MpuReaderData = SemaphoreMutexData<MotionState>;
+using MpuReaderData = Types::SemaphoreMutexData<MotionState>;
 
 class MPUReader : public BaseModule
 {
