@@ -1,6 +1,6 @@
 #include "web_server.hpp"
 
-RWebServer::RWebServer(LineFollower *lineFollower)
+RWebServer::RWebServer(LineFollower *lineFollower, ColorDetector *colorDetector)
     : BaseModule(
           "WEB_SERVER",
           RWEB_SERVER_TASK_PRIORITY,
@@ -9,6 +9,7 @@ RWebServer::RWebServer(LineFollower *lineFollower)
           RWEB_SERVER_TASK_PINNED_CORE_ID)
 {
   this->lineFollower = lineFollower;
+  this->colorDetector = colorDetector;
 
   this->server = new WebServer(80);
 
@@ -28,6 +29,8 @@ RWebServer::RWebServer(LineFollower *lineFollower)
 
   this->server->on("/", std::bind(&RWebServer::getIndex, this));
   this->server->on("/line-follower", std::bind(&RWebServer::getLineFollower, this));
+  this->server->on("/color", std::bind(&RWebServer::getColor, this));
+
   this->server->begin();
 }
 
@@ -48,9 +51,37 @@ void RWebServer::getIndex()
 
 void RWebServer::getLineFollower()
 {
-  SensorValues value = this->lineFollower->getLineFollowerValues();
-  String data = "[\"" + String(value.out1) + "\",\"" + String(value.out2) + "\",\"" + String(value.out3) + "\",\"" + String(value.out4) + "\",\"" + String(value.out5) + "\"]";
-  ESP_LOGI(this->NAME, "Sending data: %s", data.c_str());
+  LineFollowerSensorValues sensor = this->lineFollower->getLineFollowerValues();
+
+  StaticJsonDocument<200> doc;
+  doc["out1"] = sensor.out1;
+  doc["out2"] = sensor.out2;
+  doc["out3"] = sensor.out3;
+  doc["out4"] = sensor.out4;
+  doc["out5"] = sensor.out5;
+
+  String jsonString;
+  serializeJson(doc, jsonString);
+  this->onResponse(jsonString);
+}
+
+void RWebServer::getColor()
+{
+  ColorRGB color = this->colorDetector->getColor();
+
+  StaticJsonDocument<200> doc;
+  doc["red"] = color.red;
+  doc["green"] = color.green;
+  doc["blue"] = color.blue;
+
+  String jsonString;
+  serializeJson(doc, jsonString);
+
+  this->onResponse(jsonString);
+}
+
+void RWebServer::onResponse(String data)
+{
   this->server->sendHeader("Access-Control-Allow-Origin", "*");
   this->server->send(200, "application/json", data);
 }

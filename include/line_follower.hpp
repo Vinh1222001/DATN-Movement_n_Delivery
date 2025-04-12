@@ -13,20 +13,16 @@
 #define LINE_SENSOR_PIN_RIGHT GPIO_NUM_35
 #define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_34
 
-#define THRESHOLE 2000
-
-struct SensorValues
+struct LineFollowerSensorValues
 {
   int out1;
   int out2;
-#if LINE_FOLLOWER_VERSION == 1
   int out3;
   int out4;
   int out5;
-#endif
 };
 
-using LineFollowerSignals = SemaphoreMutexData<SensorValues>;
+using LineFollowerSignals = SemaphoreMutexData<LineFollowerSensorValues>;
 
 class LineFollower : public BaseModule
 {
@@ -45,7 +41,7 @@ public:
   ~LineFollower();
 
   bool isArrived();
-  SensorValues getLineFollowerValues();
+  LineFollowerSensorValues getLineFollowerValues();
 };
 
 #endif

@@ -26,6 +26,7 @@ void setup()
   Controller *controller = new Controller();
 
   controller->createTask();
+  delay(3000);
   controller->run();
 }
 
