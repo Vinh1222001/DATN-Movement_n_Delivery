@@ -23,13 +23,21 @@ void setup()
 
   ESP_LOGI("SET UP", "Initializing...\n");
 
-  Controller *controller = new Controller();
+  // Controller *controller = new Controller();
 
-  controller->createTask();
+  // controller->createTask();
+  // delay(3000);
+  // controller->run();
+
+  WifiUtil::initWifi(WIFI_SSID, WIFI_PASSWORD, true);
+
+  RWebServer *ws = new RWebServer();
+  ws->createTask();
   delay(3000);
-  controller->run();
+  ws->run();
 }
 
 void loop()
 {
+  delay(1000);
 }

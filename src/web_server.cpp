@@ -11,82 +11,81 @@ RWebServer::RWebServer(LineFollower *lineFollower, ColorDetector *colorDetector)
   this->lineFollower = lineFollower;
   this->colorDetector = colorDetector;
 
-  this->server = new WebServer(80);
+  this->messageSend.xMutex = xSemaphoreCreateMutex();
 
-  if (!SPIFFS.begin(true))
+  this->client = new websockets::WebsocketsClient();
+
+  this->client->onMessage(
+      [this](websockets::WebsocketsMessage msg)
+      {
+        this->onMessage(msg);
+      });
+
+  this->client->onEvent(
+      [this](websockets::WebsocketsEvent event, websockets::WSInterfaceString message)
+      {
+        this->onEvent(event, message);
+      });
+
+  this->client->setInsecure();
+
+  if (this->client->connect(this->url))
   {
-    ESP_LOGE(this->NAME, "SPIFFS Mount Failed");
-    return;
+    ESP_LOGE(this->NAME, "Can't Connect to server");
   }
-
-  WiFi.begin(this->ssid, this->password);
-  while (WiFi.status() != WL_CONNECTED)
+  else
   {
-    delay(500);
-    ESP_LOGE(this->NAME, ".");
+    this->client->send("ESP32 hello server");
   }
-  ESP_LOGI(this->NAME, "WiFi connected. IP: %s", WiFi.localIP().toString());
-
-  this->server->on("/", std::bind(&RWebServer::getIndex, this));
-  this->server->on("/line-follower", std::bind(&RWebServer::getLineFollower, this));
-  this->server->on("/color", std::bind(&RWebServer::getColor, this));
-
-  this->server->begin();
 }
 
 RWebServer::~RWebServer() {}
 
-void RWebServer::getIndex()
-{
-  File file = SPIFFS.open("/index.html", "r");
-  if (!file)
-  {
-    this->server->send(500, "text/plain", "Failed to open file");
-    return;
-  }
-
-  this->server->streamFile(file, "text/html");
-  file.close();
-}
-
-void RWebServer::getLineFollower()
-{
-  LineFollowerSensorValues sensor = this->lineFollower->getLineFollowerValues();
-
-  StaticJsonDocument<200> doc;
-  doc["out1"] = sensor.out1;
-  doc["out2"] = sensor.out2;
-  doc["out3"] = sensor.out3;
-  doc["out4"] = sensor.out4;
-  doc["out5"] = sensor.out5;
-
-  String jsonString;
-  serializeJson(doc, jsonString);
-  this->onResponse(jsonString);
-}
-
-void RWebServer::getColor()
-{
-  ColorRGB color = this->colorDetector->getColor();
-
-  StaticJsonDocument<200> doc;
-  doc["red"] = color.red;
-  doc["green"] = color.green;
-  doc["blue"] = color.blue;
-
-  String jsonString;
-  serializeJson(doc, jsonString);
-
-  this->onResponse(jsonString);
-}
-
-void RWebServer::onResponse(String data)
-{
-  this->server->sendHeader("Access-Control-Allow-Origin", "*");
-  this->server->send(200, "application/json", data);
-}
-
 void RWebServer::taskFn()
 {
-  this->server->handleClient();
+  if (this->client->available())
+  {
+    this->client->poll();
+  }
+
+  if (xSemaphoreTake(this->messageSend.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    JsonDocument lineFollower;
+    lineFollower["leftMost"] = millis();
+    lineFollower["left"] = "hih";
+    lineFollower["center"] = "hih";
+    lineFollower["right"] = "hih";
+    lineFollower["rightMost"] = "hih";
+    lineFollower["decision"] = "hih";
+
+    JsonDocument colorDetector;
+    colorDetector["red"] = "hahahahah";
+    colorDetector["green"] = "hahahahah";
+    colorDetector["blue"] = "hahahahah";
+    colorDetector["color"] = "hahahahah";
+
+    String productType = "I don't know";
+
+    this->messageSend.value["lineFollower"] = lineFollower;
+    this->messageSend.value["colorDetector"] = colorDetector;
+    this->messageSend.value["productType"] = productType;
+
+    String JsonString;
+    serializeJson(this->messageSend.value, JsonString);
+    this->client->send(JsonString.c_str());
+
+    xSemaphoreGive(this->messageSend.xMutex);
+  }
+}
+
+void RWebServer::onMessage(websockets::WebsocketsMessage message)
+{
+  ESP_LOGI(this->NAME, "Got message: %s", message.data().c_str());
+}
+
+void RWebServer::onEvent(websockets::WebsocketsEvent event, websockets::WSInterfaceString message)
+{
+  ESP_LOGI(this->NAME, "Event: %d, Message: %s", event, message.c_str());
+
+  // You can use `this` here too for class logic
 }

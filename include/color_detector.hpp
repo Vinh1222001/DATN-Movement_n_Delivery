@@ -21,7 +21,7 @@ struct ColorRGB
   int blue;
 };
 
-using ColorDetectorValue = SemaphoreMutexData<ColorRGB>;
+using ColorDetectorValue = Types::SemaphoreMutexData<ColorRGB>;
 
 class ColorDetector : public BaseModule
 {

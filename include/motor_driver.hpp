@@ -19,7 +19,7 @@
 
 #define MOTOR_DRIVER_INIT_SPEED 0
 
-using MotorState = SemaphoreMutexData<uint8_t>;
+using MotorState = Types::SemaphoreMutexData<uint8_t>;
 
 struct Speed
 {
@@ -27,7 +27,7 @@ struct Speed
   int right;
 };
 
-using MotorSpeed = SemaphoreMutexData<Speed>;
+using MotorSpeed = Types::SemaphoreMutexData<Speed>;
 
 class MotorDriver : public BaseModule
 {

@@ -5,34 +5,33 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
-#include <FS.h>
-#include <SPIFFS.h>
-#include <WebServer.h>
+#include <ArduinoWebsockets.h>
 
 #include "base_module.hpp"
+#include "types.hpp"
 #include "line_follower.hpp"
 #include "color_detector.hpp"
+
+using SocketMessage = Types::SemaphoreMutexData<JsonDocument>;
 
 class RWebServer : public BaseModule
 {
 private:
-  const char *ssid = RWEB_SERVER_SSID;
-  const char *password = RWEB_SERVER_PASSWORD;
-  WebServer *server = nullptr;
+  const char *url = RWEB_SERVER_BASE_URL;
+  websockets::WebsocketsClient *client = nullptr;
 
   LineFollower *lineFollower;
   ColorDetector *colorDetector;
 
+  SocketMessage messageSend;
+
   void taskFn() override;
 
-  void onResponse(String data);
-
-  void getIndex();
-  void getLineFollower();
-  void getColor();
+  void onMessage(websockets::WebsocketsMessage message);
+  void onEvent(websockets::WebsocketsEvent event, websockets::WSInterfaceString message);
 
 public:
-  RWebServer(LineFollower *lineFollower, ColorDetector *colorDetector);
+  RWebServer(LineFollower *lineFollower = nullptr, ColorDetector *colorDetector = nullptr);
   ~RWebServer();
 };
 

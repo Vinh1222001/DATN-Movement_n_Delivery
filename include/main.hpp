@@ -7,4 +7,7 @@
 
 #include "controller.hpp"
 
+#include "utils/wifi.hpp"
+#include "web_server.hpp"
+
 #endif
