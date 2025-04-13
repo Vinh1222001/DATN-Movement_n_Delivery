@@ -63,6 +63,8 @@ public:
   RWebSocketClient();
   ~RWebSocketClient();
 
+  bool isConnected();
+
   void setLineFollowerData(LineFollowerData data);
   void setColorDetectorData(ColorDetectorData data);
   void setProductTypeData(ProductTypeData data);

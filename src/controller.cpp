@@ -18,72 +18,48 @@ void Controller::stateMachine()
   switch (this->state)
   {
   case INIT:
-
-    ESP_LOGI(this->NAME, "Initializing components...");
-    if (!this->init())
-    {
-      break;
-    }
-    delay(3000);
-    ESP_LOGI(this->NAME, "Components initialized.");
-    this->state = START;
-
+    this->init();
+    delay(2000);
     break;
-  case PREPARE:
 
-    ESP_LOGI(this->NAME, "Creating component's tasks...");
-    if (!this->prepareTasks())
-    {
-      ESP_LOGE(this->NAME, "Failed to create tasks");
-      break;
-    }
-    ESP_LOGI(this->NAME, "Component's tasks created.");
-    this->state = START;
-    delay(3000);
-
+  case SETUP:
+    this->setup();
+    delay(2000);
     break;
+
+  case READY:
+    this->ready();
+    delay(2000);
+    break;
+
   case START:
-
-    ESP_LOGI(this->NAME, "Starting component's tasks...");
-    if (!this->start())
-    {
-      ESP_LOGE(this->NAME, "Failed to start tasks");
-      break;
-    }
-    this->state = PICKUP_TRANSIT;
-
+    !this->start();
+    delay(2000);
     break;
+
   case PICKUP_TRANSIT:
-    if (this->pickupTransit())
-    {
-      this->state = PICKUP;
-    }
+    this->pickupTransit();
     break;
+
   case DROPOFF_TRANSIT:
 
-    if (this->dropoffTransit())
-    {
-      this->state = DROPOFF;
-    }
+    this->dropoffTransit();
     break;
+
   case PICKUP:
-    if (this->pickup())
-    {
-      this->state = CLASSIFY;
-    }
+    this->pickup();
     break;
 
   case DROPOFF:
-    if (this->dropoff())
-    {
-      this->state = PICKUP_TRANSIT;
-    }
+    this->dropoff();
     break;
+
   case CLASSIFY:
-    if (this->classify())
-    {
-      this->state = DROPOFF_TRANSIT;
-    }
+    this->classify();
+    break;
+
+  case IDLE:
+    this->idle();
     break;
   }
 }
@@ -93,11 +69,14 @@ void Controller::taskFn()
   this->stateMachine();
 }
 
-void Controller::setState(RobotState state)
+void Controller::setState(RobotState state, bool extCondition)
 {
-  if (state != this->state)
+  if (extCondition)
   {
-    this->state = state;
+    if (state != this->state)
+    {
+      this->state = state;
+    }
   }
 }
 
@@ -119,33 +98,134 @@ void Controller::runComponent(BaseModule *component)
 
 bool Controller::init()
 {
-  this->monitor = new Monitor();
-  this->colorDetector = new ColorDetector(this->monitor);
-  this->motorDriver = new MotorDriver();
-  this->lineFollower = new LineFollower(this->motorDriver);
+  ESP_LOGI(this->NAME, "Initialize components...");
 
-  if (this->monitor == nullptr ||
-      this->colorDetector == nullptr ||
-      this->motorDriver == nullptr ||
-      this->lineFollower == nullptr)
+  this->webSocketClient = new RWebSocketClient();
+  if (this->webSocketClient == nullptr || !this->webSocketClient->isConnected())
   {
-    ESP_LOGE(this->NAME, "One or more components are NULL");
+    ESP_LOGE(this->NAME, "Failed to init Web Socket Client");
     return false;
   }
+  ESP_LOGI(this->NAME, "Init Web Socket Client success");
+
+  this->monitor = new Monitor();
+  if (this->monitor == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Failed to init Monitor");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Init Monitor success");
+
+  this->colorDetector = new ColorDetector(this->monitor);
+  if (this->colorDetector == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Failed to init Color Detector");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Init Color Detector success");
+
+  this->motorDriver = new MotorDriver();
+  if (this->motorDriver == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Failed to init Motor Driver");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Init Motor Driver success");
+
+  this->lineFollower = new LineFollower(this->motorDriver);
+  if (this->lineFollower == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Failed to init Line Follower");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Init Line Follower success");
+
+  ESP_LOGI(this->NAME, "All components have initalized!");
+  this->setState(SETUP);
+  return true;
+}
+
+bool Controller::setup()
+{
+  ESP_LOGI(this->NAME, "Creating component's tasks...");
+
+  if (!this->webSocketClient)
+  {
+    ESP_LOGE(this->NAME, "WebSocketClient is not initialized");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Creating WebSocketClient's task...");
+  this->webSocketClient->createTask();
+  delay(2000);
+  ESP_LOGI(this->NAME, "Created WebSocketClient's task successfully");
+
+  if (!this->monitor)
+  {
+    ESP_LOGE(this->NAME, "Monitor is not initialized");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Creating Monitor's task...");
+  this->monitor->createTask();
+  delay(2000);
+  ESP_LOGI(this->NAME, "Created Monitor's task successfully");
+
+  if (!this->colorDetector)
+  {
+    ESP_LOGE(this->NAME, "ColorDetector is not initialized");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Creating ColorDetector's task...");
+  this->colorDetector->createTask();
+  delay(2000);
+  ESP_LOGI(this->NAME, "Created ColorDetector's task successfully");
+
+  if (!this->lineFollower)
+  {
+    ESP_LOGE(this->NAME, "LineFollower is not initialized");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Creating LineFollower's task...");
+  this->lineFollower->createTask();
+  delay(2000);
+  ESP_LOGI(this->NAME, "Created LineFollower's task successfully");
+
+  if (!this->motorDriver)
+  {
+    ESP_LOGE(this->NAME, "MotorDriver is not initialized");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Creating MotorDriver's task...");
+  this->motorDriver->createTask();
+  delay(2000);
+  ESP_LOGI(this->NAME, "Created MotorDriver's task successfully");
+
+  ESP_LOGI(this->NAME, "All component tasks have been created successfully!");
+  this->state = READY;
 
   return true;
 }
 
-bool Controller::prepareTasks()
+bool Controller::ready()
 {
-  this->monitor->createTask();
-  delay(5000);
-  this->colorDetector->createTask();
-  delay(5000);
-  this->lineFollower->createTask();
-  delay(5000);
-  this->motorDriver->createTask();
-  delay(5000);
+  ESP_LOGI(this->NAME, "Run important components...");
+  if (!this->webSocketClient)
+  {
+    ESP_LOGE(this->NAME, "webSocketClient is not initialized");
+    return false;
+  }
+  this->runComponent(this->webSocketClient);
+  ESP_LOGI(this->NAME, "Run webSocketClient's task successfully");
+
+  if (!this->monitor)
+  {
+    ESP_LOGE(this->NAME, "Monitor is not initialized");
+    return false;
+  }
+  this->runComponent(this->monitor);
+  ESP_LOGI(this->NAME, "Run Monitor's task successfully");
+
+  ESP_LOGI(this->NAME, "All important components have run!");
+  this->setState(START);
 
   return true;
 }
@@ -154,11 +234,32 @@ bool Controller::start()
 {
   ESP_LOGI(this->NAME, "Running component's tasks...");
 
-  this->runComponent(this->monitor);
+  if (!this->colorDetector)
+  {
+    ESP_LOGE(this->NAME, "colorDetector is not initialized");
+    return false;
+  }
   this->runComponent(this->colorDetector);
-  this->runComponent(this->lineFollower);
-  this->runComponent(this->motorDriver);
+  ESP_LOGI(this->NAME, "Run colorDetector's task successfully");
 
+  if (!this->lineFollower)
+  {
+    ESP_LOGE(this->NAME, "lineFollower is not initialized");
+    return false;
+  }
+  this->runComponent(this->lineFollower);
+  ESP_LOGI(this->NAME, "Run lineFollower's task successfully");
+
+  if (!this->motorDriver)
+  {
+    ESP_LOGE(this->NAME, "motorDriver is not initialized");
+    return false;
+  }
+  this->runComponent(this->motorDriver);
+  ESP_LOGI(this->NAME, "Run motorDriver's task successfully");
+
+  ESP_LOGI(this->NAME, "All components have run!");
+  this->setState(PICKUP_TRANSIT);
   return true;
 }
 

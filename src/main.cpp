@@ -29,12 +29,6 @@ void setup()
 
   ESP_LOGI("SET UP", "Initializing...\n");
 
-  // Controller *controller = new Controller();
-
-  // controller->createTask();
-  // delay(3000);
-  // controller->run();
-
   WifiUtil::initWifi(
       WIFI_SSID,
       WIFI_PASSWORD,
@@ -45,10 +39,11 @@ void setup()
       primaryDNS,
       secondaryDNS);
 
-  RWebSocketClient *ws = new RWebSocketClient();
-  ws->createTask();
+  Controller *controller = new Controller();
+
+  controller->createTask();
   delay(3000);
-  ws->run();
+  controller->run();
 }
 
 void loop()

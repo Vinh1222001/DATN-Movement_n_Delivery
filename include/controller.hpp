@@ -13,7 +13,8 @@
 enum RobotState
 {
   INIT = 200,
-  PREPARE,
+  SETUP,
+  READY,
   START,
   PICKUP_TRANSIT,
   PICKUP,
@@ -29,16 +30,16 @@ private:
   ColorSet nextArea;
   RobotState state;
 
-  MotorDriver *motorDriver;
-  LineFollower *lineFollower;
-  RWebSocketClient *webServer;
+  RWebSocketClient *webSocketClient = nullptr;
+  Monitor *monitor = nullptr;
 
-  ColorDetector *colorDetector;
-
-  Monitor *monitor;
+  MotorDriver *motorDriver = nullptr;
+  LineFollower *lineFollower = nullptr;
+  ColorDetector *colorDetector = nullptr;
 
   bool init();
-  bool prepareTasks();
+  bool setup();
+  bool ready();
   bool start();
   bool pickupTransit();
   bool pickup();
@@ -56,7 +57,7 @@ public:
   Controller();
   ~Controller();
 
-  void setState(RobotState state);
+  void setState(RobotState state, bool extCondition = true);
   RobotState getState();
 };
 

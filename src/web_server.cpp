@@ -28,17 +28,24 @@ RWebSocketClient::RWebSocketClient()
 
   this->client->setInsecure();
 
-  if (this->client->connect(this->url))
+  if (!this->client->connect(this->url))
   {
-    ESP_LOGE(this->NAME, "Can't Connect to server");
+    ESP_LOGE(this->NAME, "Can't Connect to server: %s", this->url);
   }
   else
   {
+    ESP_LOGI(this->NAME, "Connected to server: %s", this->url);
+    delay(1000);
     this->client->send("ESP32 hello server");
   }
 }
 
 RWebSocketClient::~RWebSocketClient() {}
+
+bool RWebSocketClient::isConnected()
+{
+  return this->client->available();
+}
 
 void RWebSocketClient::taskFn()
 {

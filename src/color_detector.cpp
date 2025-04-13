@@ -119,7 +119,7 @@ ColorRGB ColorDetector::getColor()
   return color;
 }
 
-ColorSet detectColor(int r, int g, int b)
+ColorSet ColorDetector::detectColor(int r, int g, int b)
 {
   if (r > 150 && g < 100 && b < 100)
   {
