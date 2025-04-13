@@ -116,7 +116,7 @@ bool Controller::init()
   }
   ESP_LOGI(this->NAME, "Init Monitor success");
 
-  this->colorDetector = new ColorDetector(this->monitor);
+  this->colorDetector = new ColorDetector(this->monitor, this->webSocketClient);
   if (this->colorDetector == nullptr)
   {
     ESP_LOGE(this->NAME, "Failed to init Color Detector");
@@ -132,7 +132,7 @@ bool Controller::init()
   }
   ESP_LOGI(this->NAME, "Init Motor Driver success");
 
-  this->lineFollower = new LineFollower(this->motorDriver);
+  this->lineFollower = new LineFollower(this->motorDriver, this->webSocketClient);
   if (this->lineFollower == nullptr)
   {
     ESP_LOGE(this->NAME, "Failed to init Line Follower");

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "base_module.hpp"
 #include "types.hpp"
+#include "web_server.hpp"
 #include "monitor.hpp"
 
 #define COLOR_DETECTOR_PIN_S0 GPIO_NUM_4
@@ -41,6 +42,7 @@ private:
 
   ColorDetectorValue color;
 
+  RWebSocketClient *webSocketClient;
   Monitor *monitor;
 
   int getRed();
@@ -48,13 +50,14 @@ private:
   int getBlue();
 
   ColorSet detectColor(int r, int g, int b);
+  String colorToString(ColorSet color);
 
   void printColor();
 
   void taskFn() override;
 
 public:
-  ColorDetector(Monitor *monitor);
+  ColorDetector(Monitor *monitor = nullptr, RWebSocketClient *webSocketClient = nullptr);
   ~ColorDetector();
 
   ColorRGB getColor();

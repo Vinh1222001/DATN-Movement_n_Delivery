@@ -86,37 +86,37 @@ void MotorDriver::setSpeed(const int value)
   }
 }
 
-void MotorDriver::moveFoward()
+void MotorDriver::moveForward()
 {
-  ESP_LOGI("MOTOR_DRIVER", "Move forward");
+  ESP_LOGI(this->NAME, "Move forward");
   this->writeState(MOTOR_DRIVER_MOVE_FORWARD_STATE_IDX);
-  this->setSpeed(120);
+  this->setSpeed(70);
 }
 
 void MotorDriver::moveBackward()
 {
-  ESP_LOGI("MOTOR_DRIVER", "Move backward");
+  ESP_LOGI(this->NAME, "Move backward");
   this->writeState(MOTOR_DRIVER_MOVE_BACKWARD_STATE_IDX);
-  this->setSpeed(120);
+  this->setSpeed(70);
 }
 
 void MotorDriver::moveLeft()
 {
-  ESP_LOGI("MOTOR_DRIVER", "Move left");
+  ESP_LOGI(this->NAME, "Move left");
   this->writeState(MOTOR_DRIVER_MOVE_LEFT_STATE_IDX);
-  this->setSpeed(120);
+  this->setSpeed(70);
 }
 
 void MotorDriver::moveRight()
 {
-  ESP_LOGI("MOTOR_DRIVER", "Move right");
+  ESP_LOGI(this->NAME, "Move right");
   this->writeState(MOTOR_DRIVER_MOVE_RIGHT_STATE_IDX);
-  this->setSpeed(120);
+  this->setSpeed(70);
 }
 
 void MotorDriver::stop()
 {
-  ESP_LOGI("MOTOR_DRIVER", "Stopped");
+  ESP_LOGI(this->NAME, "Stopped");
   this->writeState(MOTOR_DRIVER_MOVE_STOP_STATE_IDX);
   this->setSpeed(MOTOR_DRIVER_INIT_SPEED);
 }

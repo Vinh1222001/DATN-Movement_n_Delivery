@@ -1,12 +1,16 @@
 #include "color_detector.hpp"
 
-ColorDetector::ColorDetector(Monitor *monitor)
+ColorDetector::ColorDetector(
+    Monitor *monitor,
+    RWebSocketClient *webSocketClient)
     : BaseModule(
           "COLOR_DETECTOR",
           COLOR_DETECTOR_TASK_PRIORITY,
           COLOR_DETECTOR_TASK_DELAY,
           COLOR_DETECTOR_TASK_STACK_DEPTH_LEVEL,
-          COLOR_DETECTOR_TASK_PINNED_CORE_ID)
+          COLOR_DETECTOR_TASK_PINNED_CORE_ID),
+      monitor(monitor),
+      webSocketClient(webSocketClient)
 {
 
   this->color.value = {0, 0, 0};
@@ -20,8 +24,6 @@ ColorDetector::ColorDetector(Monitor *monitor)
 
   digitalWrite(COLOR_DETECTOR_PIN_S0, HIGH);
   digitalWrite(COLOR_DETECTOR_PIN_S1, LOW);
-
-  this->monitor = monitor;
 }
 ColorDetector::~ColorDetector() {}
 
@@ -94,14 +96,27 @@ void ColorDetector::taskFn()
   int blue = map(rawBlue, this->MIN_BLUE, this->MAX_BLUE, 255, 0);
   delay(COLOR_DETECTOR_FILTER_DELAY);
 
+  ColorSet color = this->detectColor(red, green, blue);
+
   if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
   {
     this->color.value = {
         .red = red,
         .green = green,
         .blue = blue,
-        .color = this->detectColor(red, green, blue)};
+        .color = color};
     xSemaphoreGive(this->color.xMutex);
+  }
+
+  if (this->webSocketClient != nullptr)
+  {
+    ColorDetectorData colorDetectorData = {
+        .red = red,
+        .green = green,
+        .blue = blue,
+        .color = this->colorToString(color)};
+
+    this->webSocketClient->setColorDetectorData(colorDetectorData);
   }
 
   this->printColor();
@@ -140,5 +155,20 @@ ColorSet ColorDetector::detectColor(int r, int g, int b)
   else
   {
     return NONE; // No recognized color
+  }
+}
+
+String ColorDetector::colorToString(ColorSet color)
+{
+  switch (color)
+  {
+  case RED:
+    return String("RED");
+  case GREEN:
+    return String("GREEN");
+  case BLUE:
+    return String("BLUE");
+  default:
+    return String("NONE");
   }
 }

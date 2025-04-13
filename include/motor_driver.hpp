@@ -58,7 +58,7 @@ public:
 
   void setSpeed(const int value);
 
-  void moveFoward();
+  void moveForward();
   void moveBackward();
   void moveLeft();
   void moveRight();

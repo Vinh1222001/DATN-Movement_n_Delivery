@@ -6,6 +6,7 @@
 #include "types.hpp"
 #include "base_module.hpp"
 #include "motor_driver.hpp"
+#include "web_server.hpp"
 
 #define LINE_SENSOR_PIN_LEFT_MOST GPIO_NUM_33
 #define LINE_SENSOR_PIN_LEFT GPIO_NUM_39
@@ -22,6 +23,15 @@ struct LineFollowerSensorValues
   int out5;
 };
 
+enum LineFollowerDecision
+{
+  STOP = 600,
+  LEFT,
+  RIGHT,
+  FORWARD,
+  BACKWARD
+};
+
 using LineFollowerSignals = Types::SemaphoreMutexData<LineFollowerSensorValues>;
 
 class LineFollower : public BaseModule
@@ -33,11 +43,16 @@ private:
   Types::SemaphoreMutexData<bool> isRobotArrived;
 
   MotorDriver *motorDriver = nullptr;
+  RWebSocketClient *webSocketClient = nullptr;
+
+  LineFollowerDecision decide(LineFollowerSensorValues values);
+  String decide2String(LineFollowerDecision decision);
+  void driveMotor(LineFollowerDecision decision);
 
   void taskFn() override;
 
 public:
-  LineFollower(MotorDriver *motorDriver = nullptr);
+  LineFollower(MotorDriver *motorDriver = nullptr, RWebSocketClient *webSocketClient = nullptr);
   ~LineFollower();
 
   bool isArrived();

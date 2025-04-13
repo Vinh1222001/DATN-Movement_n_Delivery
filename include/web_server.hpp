@@ -9,8 +9,6 @@
 
 #include "base_module.hpp"
 #include "types.hpp"
-#include "line_follower.hpp"
-#include "color_detector.hpp"
 
 struct LineFollowerData
 {
