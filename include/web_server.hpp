@@ -12,18 +12,47 @@
 #include "line_follower.hpp"
 #include "color_detector.hpp"
 
-using SocketMessage = Types::SemaphoreMutexData<JsonDocument>;
+struct LineFollowerData
+{
+  int leftMost;
+  int left;
+  int center;
+  int right;
+  int rightMost;
+  String decision;
+};
 
-class RWebServer : public BaseModule
+struct ColorDetectorData
+{
+  int red;
+  int green;
+  int blue;
+  String color;
+};
+
+struct ProductTypeData
+{
+  String label;
+  double accuration;
+  int x;
+  int y;
+  int width;
+  int height;
+};
+
+using LineFollowerMessage = Types::SemaphoreMutexData<LineFollowerData>;
+using ColorDetectorMessage = Types::SemaphoreMutexData<ColorDetectorData>;
+using ProductTypeMessage = Types::SemaphoreMutexData<ProductTypeData>;
+
+class RWebSocketClient : public BaseModule
 {
 private:
   const char *url = RWEB_SERVER_BASE_URL;
   websockets::WebsocketsClient *client = nullptr;
 
-  LineFollower *lineFollower;
-  ColorDetector *colorDetector;
-
-  SocketMessage messageSend;
+  LineFollowerMessage lineFollowerMessage;
+  ColorDetectorMessage colorDetectorMessage;
+  ProductTypeMessage productTypeMessage;
 
   void taskFn() override;
 
@@ -31,8 +60,12 @@ private:
   void onEvent(websockets::WebsocketsEvent event, websockets::WSInterfaceString message);
 
 public:
-  RWebServer(LineFollower *lineFollower = nullptr, ColorDetector *colorDetector = nullptr);
-  ~RWebServer();
+  RWebSocketClient();
+  ~RWebSocketClient();
+
+  void setLineFollowerData(LineFollowerData data);
+  void setColorDetectorData(ColorDetectorData data);
+  void setProductTypeData(ProductTypeData data);
 };
 
 #endif

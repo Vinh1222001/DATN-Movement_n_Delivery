@@ -1,5 +1,11 @@
 #include "main.hpp"
 
+IPAddress localIP(192, 168, 2, 210);
+IPAddress gateway(192, 168, 2, 1);
+IPAddress subnet(255, 255, 255, 0);
+IPAddress primaryDNS(8, 8, 8, 8);
+IPAddress secondaryDNS(8, 8, 4, 4);
+
 void setup()
 {
   ESP_LOGI("SET UP", "Set up Serial...");
@@ -29,9 +35,17 @@ void setup()
   // delay(3000);
   // controller->run();
 
-  WifiUtil::initWifi(WIFI_SSID, WIFI_PASSWORD, true);
+  WifiUtil::initWifi(
+      WIFI_SSID,
+      WIFI_PASSWORD,
+      true,
+      localIP,
+      gateway,
+      subnet,
+      primaryDNS,
+      secondaryDNS);
 
-  RWebServer *ws = new RWebServer();
+  RWebSocketClient *ws = new RWebSocketClient();
   ws->createTask();
   delay(3000);
   ws->run();

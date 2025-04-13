@@ -17,7 +17,7 @@ private:
 
   MotorDriver *motorDriver;
   LineFollower *lineFollower;
-  RWebServer *webServer;
+  RWebSocketClient *webServer;
 
   ColorDetector *colorDetector;
 
