@@ -10,6 +10,4 @@
 
 #include "controller.hpp"
 
-#include "utils/wifi.hpp"
-
 #endif
