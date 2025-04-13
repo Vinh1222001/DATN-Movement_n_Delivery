@@ -8,7 +8,7 @@ Controller::Controller()
           CONTROLLER_TASK_STACK_DEPTH_LEVEL,
           CONTROLLER_TASK_PINNED_CORE_ID)
 {
-  this->state = CONTROLLER_STATE_MACHINE_INIT;
+  this->state = INIT;
 }
 
 Controller::~Controller() {}
@@ -17,72 +17,73 @@ void Controller::stateMachine()
 {
   switch (this->state)
   {
-  case CONTROLLER_STATE_MACHINE_INIT:
+  case INIT:
+
     ESP_LOGI(this->NAME, "Initializing components...");
+    if (!this->init())
+    {
+      break;
+    }
+    delay(3000);
+    ESP_LOGI(this->NAME, "Components initialized.");
+    this->state = START;
 
-    this->monitor = new Monitor();
-    this->colorDetector = new ColorDetector(this->monitor);
-    this->motorDriver = new MotorDriver();
-    this->lineFollower = new LineFollower(this->motorDriver);
-    this->state = CONTROLLER_STATE_MACHINE_START;
     break;
-  case CONTROLLER_STATE_MACHINE_START:
+  case PREPARE:
+
     ESP_LOGI(this->NAME, "Creating component's tasks...");
-
-    this->monitor->createTask();
-    delay(5000);
-
-    this->colorDetector->createTask();
-    delay(5000);
-
-    this->lineFollower->createTask();
-    delay(5000);
-
-    this->motorDriver->createTask();
-    delay(5000);
-
-    this->state = CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT;
-
-    break;
-  case CONTROLLER_STATE_MACHINE_PICKUP_TRANSIT:
-    ESP_LOGI(this->NAME, "Running component's tasks...");
-
-    if (this->monitor == nullptr)
+    if (!this->prepareTasks())
     {
-      ESP_LOGI(this->NAME, "MONITOR is NULL");
+      ESP_LOGE(this->NAME, "Failed to create tasks");
       break;
     }
-    this->monitor->run();
+    ESP_LOGI(this->NAME, "Component's tasks created.");
+    this->state = START;
+    delay(3000);
 
-    if (this->colorDetector == nullptr)
+    break;
+  case START:
+
+    ESP_LOGI(this->NAME, "Starting component's tasks...");
+    if (!this->start())
     {
-      ESP_LOGI(this->NAME, "COLOR DETECTOR is NULL");
+      ESP_LOGE(this->NAME, "Failed to start tasks");
       break;
     }
-    this->colorDetector->run();
-    if (this->lineFollower == nullptr)
-    {
-      ESP_LOGI(this->NAME, "LINE FOLLOWER is NULL");
-      break;
-    }
-    this->lineFollower->run();
+    this->state = PICKUP_TRANSIT;
 
-    if (this->motorDriver == nullptr)
+    break;
+  case PICKUP_TRANSIT:
+    if (this->pickupTransit())
     {
-      ESP_LOGI(this->NAME, "MOTOR DRIVER is NULL");
-      break;
+      this->state = PICKUP;
     }
-    this->motorDriver->run();
+    break;
+  case DROPOFF_TRANSIT:
 
-    this->state = 0;
+    if (this->dropoffTransit())
+    {
+      this->state = DROPOFF;
+    }
     break;
-  case CONTROLLER_STATE_MACHINE_DELIVERY:
+  case PICKUP:
+    if (this->pickup())
+    {
+      this->state = CLASSIFY;
+    }
     break;
-  case CONTROLLER_STATE_MACHINE_PICKUP:
+
+  case DROPOFF:
+    if (this->dropoff())
+    {
+      this->state = PICKUP_TRANSIT;
+    }
     break;
-  case CONTROLLER_STATE_MACHINE_DROP_DOWN:
-    break;
-  case CONTROLLER_STATE_MACHINE_CLASSIFY:
+  case CLASSIFY:
+    if (this->classify())
+    {
+      this->state = DROPOFF_TRANSIT;
+    }
     break;
   }
 }
@@ -92,10 +93,121 @@ void Controller::taskFn()
   this->stateMachine();
 }
 
-void Controller::setState(int state)
+void Controller::setState(RobotState state)
 {
   if (state != this->state)
   {
     this->state = state;
   }
+}
+
+RobotState Controller::getState()
+{
+  ESP_LOGI(this->NAME, "Current state: %d", this->state);
+  return this->state;
+}
+
+void Controller::runComponent(BaseModule *component)
+{
+  if (component == nullptr)
+  {
+    ESP_LOGI(this->NAME, "%s is NULL", component->getName());
+    return;
+  }
+  component->run();
+}
+
+bool Controller::init()
+{
+  this->monitor = new Monitor();
+  this->colorDetector = new ColorDetector(this->monitor);
+  this->motorDriver = new MotorDriver();
+  this->lineFollower = new LineFollower(this->motorDriver);
+
+  if (this->monitor == nullptr ||
+      this->colorDetector == nullptr ||
+      this->motorDriver == nullptr ||
+      this->lineFollower == nullptr)
+  {
+    ESP_LOGE(this->NAME, "One or more components are NULL");
+    return false;
+  }
+
+  return true;
+}
+
+bool Controller::prepareTasks()
+{
+  this->monitor->createTask();
+  delay(5000);
+  this->colorDetector->createTask();
+  delay(5000);
+  this->lineFollower->createTask();
+  delay(5000);
+  this->motorDriver->createTask();
+  delay(5000);
+
+  return true;
+}
+
+bool Controller::start()
+{
+  ESP_LOGI(this->NAME, "Running component's tasks...");
+
+  this->runComponent(this->monitor);
+  this->runComponent(this->colorDetector);
+  this->runComponent(this->lineFollower);
+  this->runComponent(this->motorDriver);
+
+  return true;
+}
+
+bool Controller::pickup()
+{
+  ESP_LOGI(this->NAME, "Pickup");
+  if (this->colorDetector == nullptr &&
+      this->colorDetector->getColor().color == NONE)
+    return false;
+
+  return this->colorDetector->getColor().color == this->nextArea;
+}
+
+bool Controller::dropoff()
+{
+  ESP_LOGI(this->NAME, "Dropoff");
+  return true;
+}
+
+bool Controller::classify()
+{
+  ESP_LOGI(this->NAME, "Classify");
+  return true;
+}
+
+bool Controller::idle()
+{
+  ESP_LOGI(this->NAME, "Idle");
+  return true;
+}
+
+bool Controller::pickupTransit()
+{
+  ESP_LOGI(this->NAME, "Pickup Transit");
+  return true;
+}
+
+bool Controller::dropoffTransit()
+{
+  ESP_LOGI(this->NAME, "Dropoff Transit");
+  if (this->colorDetector == nullptr)
+  {
+    return false;
+  }
+  return this->colorDetector->getColor().color != NONE;
+}
+
+bool Controller::setNextArea(ColorSet area)
+{
+  this->nextArea = area;
+  return true;
 }

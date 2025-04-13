@@ -69,8 +69,13 @@ void ColorDetector::printColor()
         this->color.value.green,
         this->color.value.blue);
 
-    this->monitor->display(0, "Color: %s", color);
-    this->monitor->display(1, "RGB: %d, %d, %d", this->color.value.red, this->color.value.green, this->color.value.blue);
+    this->monitor->display(MONITOR_LINE_COLOR_DETECTOR,
+                           "Color: %s (R%d, G%d, B%d)",
+                           color,
+                           this->color.value.red,
+                           this->color.value.green,
+                           this->color.value.blue);
+
     xSemaphoreGive(this->color.xMutex);
   }
 }
@@ -94,7 +99,8 @@ void ColorDetector::taskFn()
     this->color.value = {
         .red = red,
         .green = green,
-        .blue = blue};
+        .blue = blue,
+        .color = this->detectColor(red, green, blue)};
     xSemaphoreGive(this->color.xMutex);
   }
 
@@ -111,4 +117,28 @@ ColorRGB ColorDetector::getColor()
   }
 
   return color;
+}
+
+ColorSet detectColor(int r, int g, int b)
+{
+  if (r > 150 && g < 100 && b < 100)
+  {
+    return RED;
+  }
+  else if (b > 150 && g < 150 && r < 100)
+  {
+    return BLUE;
+  }
+  else if (g > 150 && r < 100 && b < 100)
+  {
+    return GREEN;
+  }
+  else if (r > 150 && g > 150 && b < 100)
+  {
+    return YELLOW;
+  }
+  else
+  {
+    return NONE; // No recognized color
+  }
 }

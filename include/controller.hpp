@@ -10,10 +10,24 @@
 #include "color_detector.hpp"
 #include "mpu_reader.hpp"
 
+enum RobotState
+{
+  INIT = 200,
+  PREPARE,
+  START,
+  PICKUP_TRANSIT,
+  PICKUP,
+  DROPOFF_TRANSIT,
+  DROPOFF,
+  CLASSIFY,
+  IDLE,
+};
+
 class Controller : public BaseModule
 {
 private:
-  int state;
+  ColorSet nextArea;
+  RobotState state;
 
   MotorDriver *motorDriver;
   LineFollower *lineFollower;
@@ -23,6 +37,18 @@ private:
 
   Monitor *monitor;
 
+  bool init();
+  bool prepareTasks();
+  bool start();
+  bool pickupTransit();
+  bool pickup();
+  bool dropoffTransit();
+  bool dropoff();
+  bool classify();
+  bool idle();
+  bool setNextArea(ColorSet area);
+
+  void runComponent(BaseModule *component);
   void stateMachine();
   void taskFn() override;
 
@@ -30,7 +56,8 @@ public:
   Controller();
   ~Controller();
 
-  void setState(int state);
+  void setState(RobotState state);
+  RobotState getState();
 };
 
 #endif
