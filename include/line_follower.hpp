@@ -6,6 +6,7 @@
 #include "types.hpp"
 #include "base_module.hpp"
 #include "motor_driver.hpp"
+#include "web_server.hpp"
 
 #define LINE_SENSOR_PIN_LEFT_MOST GPIO_NUM_33
 #define LINE_SENSOR_PIN_LEFT GPIO_NUM_39
@@ -13,33 +14,49 @@
 #define LINE_SENSOR_PIN_RIGHT GPIO_NUM_35
 #define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_34
 
-#define THRESHOLE 2000
+struct LineFollowerSensorValues
+{
+  int out1;
+  int out2;
+  int out3;
+  int out4;
+  int out5;
+};
+
+enum LineFollowerDecision
+{
+  STOP = 600,
+  LEFT,
+  RIGHT,
+  FORWARD,
+  BACKWARD
+};
+
+using LineFollowerSignals = Types::SemaphoreMutexData<LineFollowerSensorValues>;
 
 class LineFollower : public BaseModule
 {
 private:
-  struct
-  {
-    int out1;
-    int out2;
-#if LINE_FOLLOWER_VERSION == 1
-    int out3;
-    int out4;
-    int out5;
-#endif
-  } values;
   const int factors[5] = {-4, -3, 2, 3, 4};
-  MotorDriver *motorDriver = nullptr;
 
+  LineFollowerSignals signals;
   Types::SemaphoreMutexData<bool> isRobotArrived;
+
+  MotorDriver *motorDriver = nullptr;
+  RWebSocketClient *webSocketClient = nullptr;
+
+  LineFollowerDecision decide(LineFollowerSensorValues values);
+  String decide2String(LineFollowerDecision decision);
+  void driveMotor(LineFollowerDecision decision);
 
   void taskFn() override;
 
 public:
-  LineFollower(MotorDriver *motorDriver = nullptr);
+  LineFollower(MotorDriver *motorDriver = nullptr, RWebSocketClient *webSocketClient = nullptr);
   ~LineFollower();
 
   bool isArrived();
+  LineFollowerSensorValues getLineFollowerValues();
 };
 
 #endif

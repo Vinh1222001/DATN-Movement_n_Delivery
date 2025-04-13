@@ -8,11 +8,8 @@
 #include "utils/wifi.hpp"
 #include "constants.hpp"
 
-// #include "line_follower.hpp"
-// #include "line_color_tracker.hpp"
-// #include "mpu_reader.hpp"
-// #include "ultra_sonic_reader.hpp"
-
 #include "controller.hpp"
+
+#include "utils/wifi.hpp"
 
 #endif
