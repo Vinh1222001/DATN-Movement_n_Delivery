@@ -9,12 +9,14 @@
 #include "web_server.hpp"
 #include "color_detector.hpp"
 #include "mpu_reader.hpp"
+#include "classifying_communicate.hpp"
 
 enum RobotState
 {
   INIT = 200,
   SETUP,
   READY,
+  PING,
   START,
   PICKUP_TRANSIT,
   PICKUP,
@@ -27,10 +29,12 @@ enum RobotState
 class Controller : public BaseModule
 {
 private:
+  bool isClassifying;
   ColorSet nextArea;
   RobotState state;
 
   RWebSocketClient *webSocketClient = nullptr;
+  ClassifyingCommunicate *communicate = nullptr;
   Monitor *monitor = nullptr;
 
   MotorDriver *motorDriver = nullptr;
@@ -40,6 +44,7 @@ private:
   bool init();
   bool setup();
   bool ready();
+  bool ping();
   bool start();
   bool pickupTransit();
   bool pickup();

@@ -1,7 +1,5 @@
 #include "line_follower.hpp"
 
-const char *TAG = "LINE_FOLLOWER";
-
 LineFollower::LineFollower(
     MotorDriver *motorDriver,
     RWebSocketClient *webSocketClient)

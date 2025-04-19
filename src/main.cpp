@@ -1,5 +1,7 @@
 #include "main.hpp"
 
+const char *TAG = "SETUP";
+
 IPAddress localIP(192, 168, 2, 210);
 IPAddress gateway(192, 168, 2, 1);
 IPAddress subnet(255, 255, 255, 0);
@@ -8,11 +10,11 @@ IPAddress secondaryDNS(8, 8, 4, 4);
 
 void setup()
 {
-  ESP_LOGI("SET UP", "Set up Serial...");
+  ESP_LOGI(TAG, "Set up Serial...");
   Serial.begin(CONFIG_MONITOR_BAUD);
   while (!Serial)
   {
-    ESP_LOGE("SET UP", "Serial is not found!\n");
+    ESP_LOGE(TAG, "Serial is not found!\n");
     delay(10);
   }
 
@@ -27,7 +29,7 @@ void setup()
   log_w("Warning");
   log_e("Error");
 
-  ESP_LOGI("SET UP", "Initializing...\n");
+  ESP_LOGI(TAG, "Initializing...\n");
 
   WifiUtil::initWifi(
       WIFI_SSID,
@@ -41,7 +43,14 @@ void setup()
 
   Controller *controller = new Controller();
 
+  if (controller == nullptr)
+  {
+    ESP_LOGE(TAG, "Failed to setup robot");
+    return;
+  }
+
   controller->createTask();
+  delay(2000);
   controller->run();
 
   // ClassifyingCommunicate *communicate = new ClassifyingCommunicate();

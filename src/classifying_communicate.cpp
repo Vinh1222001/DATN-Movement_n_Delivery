@@ -8,6 +8,8 @@ ClassifyingCommunicate::ClassifyingCommunicate()
     : BaseModule("CLASSIFYING_COMMUNICATE")
 {
   instance = this;
+  this->receiveMsg.xMutex = xSemaphoreCreateMutex();
+  this->begin();
 }
 
 ClassifyingCommunicate::~ClassifyingCommunicate() {}
@@ -42,10 +44,21 @@ bool ClassifyingCommunicate::begin()
   return true;
 }
 
-bool ClassifyingCommunicate::send(const bool &data)
+bool ClassifyingCommunicate::send(const std::vector<String> &data)
 {
-  const Types::EspNowMessage _msg = SetUtils::createEspNowMessage<bool>(data);
-  esp_err_t result = esp_now_send(peerMac, reinterpret_cast<const uint8_t *>(&_msg), sizeof(_msg));
+  String combined;
+  for (size_t i = 0; i < data.size(); ++i)
+  {
+    combined += data[i];
+    if (i < data.size() - 1)
+      combined += ","; // dùng dấu phẩy để phân tách
+  }
+  char hold[200];
+
+  const Types::EspNowMessage msg = SetUtils::createEspNowMessage<String>(combined);
+
+  ESP_LOGI(this->NAME, "Data send: Id:%s and content: %s, size: %d", msg.id, msg.content, sizeof(msg));
+  esp_err_t result = esp_now_send(peerMac, reinterpret_cast<const uint8_t *>(&msg), sizeof(msg));
   if (result == ESP_OK)
   {
     ESP_LOGI(this->NAME, "Sent data successfully");
@@ -87,9 +100,29 @@ void ClassifyingCommunicate::onDataRecv(const uint8_t *mac, const uint8_t *incom
   const Types::EspNowMessage *packet = reinterpret_cast<const Types::EspNowMessage *>(incomingData);
   ESP_LOGI(this->NAME, "Data Received: Id: %s, Value: %s", packet->id, packet->content);
   // TODO: Bạn có thể thêm logic xử lý dữ liệu ở đây
-  send(true);
+  if (xSemaphoreTake(this->receiveMsg.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    this->receiveMsg.value = String(packet->content);
+    xSemaphoreGive(this->receiveMsg.xMutex);
+  }
 }
 
 void ClassifyingCommunicate::taskFn()
 {
+}
+
+String ClassifyingCommunicate::getReceiveMsg()
+{
+  String msg;
+  if (xSemaphoreTake(this->receiveMsg.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    if (this->receiveMsg.value.length() > 0)
+    {
+      msg = this->receiveMsg.value;
+    }
+
+    xSemaphoreGive(this->receiveMsg.xMutex);
+  }
+
+  return msg;
 }

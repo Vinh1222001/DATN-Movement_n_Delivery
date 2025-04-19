@@ -7,12 +7,16 @@
 #include "esp_log.h"
 #include "types.hpp"
 #include "utils/set.hpp"
+#include "vector"
+
+using Message = Types::SemaphoreMutexData<String>;
 class ClassifyingCommunicate : public BaseModule
 {
 private:
   static ClassifyingCommunicate *instance; // Static pointer to the current instance
   const uint8_t peerMac[6] = {0x08, 0xd1, 0xf9, 0x38, 0xa8, 0xac};
 
+  Message receiveMsg;
   // Static callbacks
   static void onDataSentStatic(const uint8_t *mac_addr, esp_now_send_status_t status);
   static void onDataRecvStatic(const uint8_t *mac, const uint8_t *incomingData, int len);
@@ -27,7 +31,8 @@ public:
   ~ClassifyingCommunicate();
 
   bool begin();
-  bool send(const bool &data);
+  bool send(const std::vector<String> &data);
+  String getReceiveMsg();
 };
 
 #endif

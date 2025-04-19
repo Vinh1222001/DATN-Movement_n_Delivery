@@ -6,7 +6,8 @@ Controller::Controller()
           CONTROLLER_TASK_PRIORITY,
           CONTROLLER_TASK_DELAY,
           CONTROLLER_TASK_STACK_DEPTH_LEVEL,
-          CONTROLLER_TASK_PINNED_CORE_ID)
+          CONTROLLER_TASK_PINNED_CORE_ID),
+      isClassifying(false)
 {
   this->state = INIT;
 }
@@ -29,6 +30,11 @@ void Controller::stateMachine()
 
   case READY:
     this->ready();
+    delay(2000);
+    break;
+
+  case PING:
+    this->ping();
     delay(2000);
     break;
 
@@ -100,6 +106,14 @@ bool Controller::init()
 {
   ESP_LOGI(this->NAME, "Initialize components...");
 
+  this->communicate = new ClassifyingCommunicate();
+  if (this->communicate == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Failed to init Communicate");
+    return false;
+  }
+  ESP_LOGI(this->NAME, "Init Communicate success");
+
   this->webSocketClient = new RWebSocketClient();
   if (this->webSocketClient == nullptr || !this->webSocketClient->isConnected())
   {
@@ -148,6 +162,14 @@ bool Controller::init()
 bool Controller::setup()
 {
   ESP_LOGI(this->NAME, "Creating component's tasks...");
+
+  if (!this->communicate)
+  {
+    ESP_LOGE(this->NAME, "Communicate is not initialized");
+    return false;
+  }
+  delay(2000);
+  ESP_LOGI(this->NAME, "Connecting to ESP32 CAM");
 
   if (!this->webSocketClient)
   {
@@ -225,9 +247,30 @@ bool Controller::ready()
   ESP_LOGI(this->NAME, "Run Monitor's task successfully");
 
   ESP_LOGI(this->NAME, "All important components have run!");
-  this->setState(START);
+  this->setState(PING);
 
   return true;
+}
+
+bool Controller::ping()
+{
+  std::vector<String> pingMsg;
+  pingMsg.push_back("PING");
+  this->communicate->send(pingMsg);
+
+  String response = this->communicate->getReceiveMsg();
+  if (response.compareTo("OK") == 0)
+  {
+    ESP_LOGI(this->NAME, "Connection is OK! Received message: %s", response.c_str());
+    // this->setState(START);
+    this->setState(CLASSIFY);
+    delay(1000);
+    return true;
+  }
+
+  ESP_LOGE(this->NAME, "Connection failed! Received message: %s", response.c_str());
+  delay(1000);
+  return false;
 }
 
 bool Controller::start()
@@ -281,8 +324,37 @@ bool Controller::dropoff()
 
 bool Controller::classify()
 {
-  ESP_LOGI(this->NAME, "Classify");
-  return true;
+  ESP_LOGI(this->NAME, "Classifing...");
+  if (this->communicate == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Communicate is still null");
+    return false;
+  }
+
+  if (!this->isClassifying)
+  {
+    std::vector<String> msg;
+    msg.push_back("CLASSIFY");
+    this->communicate->send(msg);
+    this->isClassifying = true;
+    return false;
+  }
+
+  String response = this->communicate->getReceiveMsg();
+  if (response.compareTo("TRUE") == 0)
+  {
+    std::vector<String> msg;
+    msg.push_back("STOP_CLASSIFY");
+    this->communicate->send(msg);
+    this->setState(IDLE);
+
+    ESP_LOGI(this->NAME, "Classify is %s", response.c_str());
+
+    delay(2000);
+    return true;
+  }
+  ESP_LOGE(this->NAME, "Failed to classify! Message is: %s", response.c_str());
+  return false;
 }
 
 bool Controller::idle()
