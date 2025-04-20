@@ -50,37 +50,32 @@ int ColorDetector::getBlue()
 
 void ColorDetector::printColor()
 {
+  ColorRGB colorElement;
   if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    int maxValue = std::max(
-        {this->color.value.red,
-         this->color.value.green,
-         this->color.value.blue});
-
-    ColorSet colorCode = this->detectColor(
-        this->color.value.red,
-        this->color.value.green,
-        this->color.value.blue);
-
-    String color = this->colorToString(colorCode);
-
-    ESP_LOGI(
-        this->NAME,
-        "Color:%s, RGB code: %d, %d, %d\n",
-        color.c_str(),
-        this->color.value.red,
-        this->color.value.green,
-        this->color.value.blue);
-
-    this->monitor->display(MONITOR_LINE_COLOR_DETECTOR,
-                           "Color: %s (R%d, G%d, B%d)",
-                           color.c_str(),
-                           this->color.value.red,
-                           this->color.value.green,
-                           this->color.value.blue);
-
+    colorElement = this->color.value;
     xSemaphoreGive(this->color.xMutex);
   }
+  ColorSet colorCode = this->detectColor(
+      colorElement.red,
+      colorElement.green,
+      colorElement.blue);
+
+  String color = this->colorToString(colorCode);
+  this->monitor->display(MONITOR_LINE_COLOR_DETECTOR,
+                         "Color: %s (R%d, G%d, B%d)",
+                         color.c_str(),
+                         colorElement.red,
+                         colorElement.green,
+                         colorElement.blue);
+
+  ESP_LOGI(
+      this->NAME,
+      "Color:%s, RGB code: %d, %d, %d",
+      color.c_str(),
+      colorElement.red,
+      colorElement.green,
+      colorElement.blue);
 }
 
 void ColorDetector::taskFn()
@@ -125,7 +120,7 @@ void ColorDetector::taskFn()
 
 ColorRGB ColorDetector::getColor()
 {
-  ColorRGB color = {0, 0, 0};
+  ColorRGB color;
   if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
   {
     color = this->color.value;
@@ -137,44 +132,24 @@ ColorRGB ColorDetector::getColor()
 
 ColorSet ColorDetector::detectColor(int r, int g, int b)
 {
-  // if (r > 150 && g < 100 && b < 100)
-  // {
-  //   return RED;
-  // }
-  // else if (r < 100 && g < 150 && b > 150)
-  // {
-  //   return BLUE;
-  // }
-  // else if (r < 100 && g > 150 && b < 100)
-  // {
-  //   return GREEN;
-  // }
-  // else if (r > 150 && g > 150 && b < 100)
-  // {
-  //   return YELLOW;
-  // }
-  // else
-  // {
-  //   return NONE; // No recognized color
-  // }
   if (
-      CompareUtils::isInConstraint<int>(r, 190, 256) &&
-      CompareUtils::isInConstraint<int>(g, 50, 150) &&
-      CompareUtils::isInConstraint<int>(b, 100, 150))
+      CompareUtils::isInConstraint<int>(r, 150, 256) &&
+      CompareUtils::isInConstraint<int>(g, 0, 50) &&
+      CompareUtils::isInConstraint<int>(b, 0, 100))
   {
     return RED;
   }
   else if (
       CompareUtils::isInConstraint<int>(r, 150, 200) &&
-      CompareUtils::isInConstraint<int>(g, 200, 256) &&
-      CompareUtils::isInConstraint<int>(b, 150, 200))
+      CompareUtils::isInConstraint<int>(g, 150, 256) &&
+      CompareUtils::isInConstraint<int>(b, 130, 160))
   {
     return GREEN;
   }
   else if (
-      CompareUtils::isInConstraint<int>(r, 50, 130) &&
-      CompareUtils::isInConstraint<int>(g, 100, 170) &&
-      CompareUtils::isInConstraint<int>(b, 200, 256))
+      CompareUtils::isInConstraint<int>(r, 0, 50) &&
+      CompareUtils::isInConstraint<int>(g, 0, 150) &&
+      CompareUtils::isInConstraint<int>(b, 190, 256))
   {
     return BLUE;
   }

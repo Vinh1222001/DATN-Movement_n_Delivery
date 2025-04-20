@@ -51,16 +51,16 @@ private:
   int getBlue();
 
   ColorSet detectColor(int r, int g, int b);
-  String colorToString(ColorSet color);
-
+  
   void printColor();
 
   void taskFn() override;
-
+  
 public:
-  ColorDetector(Monitor *monitor = nullptr, RWebSocketClient *webSocketClient = nullptr);
-  ~ColorDetector();
+ColorDetector(Monitor *monitor = nullptr, RWebSocketClient *webSocketClient = nullptr);
+~ColorDetector();
 
+String colorToString(ColorSet color);
   ColorRGB getColor();
 };
 

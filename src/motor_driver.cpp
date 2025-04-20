@@ -90,28 +90,28 @@ void MotorDriver::moveForward()
 {
   ESP_LOGI(this->NAME, "Move forward");
   this->writeState(MOTOR_DRIVER_MOVE_FORWARD_STATE_IDX);
-  this->setSpeed(70);
+  this->setSpeed(80);
 }
 
 void MotorDriver::moveBackward()
 {
   ESP_LOGI(this->NAME, "Move backward");
   this->writeState(MOTOR_DRIVER_MOVE_BACKWARD_STATE_IDX);
-  this->setSpeed(70);
+  this->setSpeed(80);
 }
 
 void MotorDriver::moveLeft()
 {
   ESP_LOGI(this->NAME, "Move left");
   this->writeState(MOTOR_DRIVER_MOVE_LEFT_STATE_IDX);
-  this->setSpeed(70);
+  this->setSpeed(80);
 }
 
 void MotorDriver::moveRight()
 {
   ESP_LOGI(this->NAME, "Move right");
   this->writeState(MOTOR_DRIVER_MOVE_RIGHT_STATE_IDX);
-  this->setSpeed(70);
+  this->setSpeed(80);
 }
 
 void MotorDriver::stop()

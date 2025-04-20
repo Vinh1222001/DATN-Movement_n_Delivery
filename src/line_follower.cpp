@@ -35,102 +35,113 @@ LineFollower::~LineFollower() {}
 
 void LineFollower::taskFn()
 {
-  if (this->enable.value)
+  bool enable = true;
+  if (
+      xSemaphoreTake(this->enable.xMutex, portMAX_DELAY) == pdTRUE &&
+      this->motorDriver != nullptr)
   {
-
-    LineFollowerSensorValues values = {0, 0, 0, 0, 0};
-
-    if (xSemaphoreTake(this->signals.xMutex, portMAX_DELAY) == pdTRUE)
-    {
-      /**
-       * @brief Out[number] = 1 => sensor catched the line, otherwise, Out[number] = 0
-       */
-      this->signals.value.out1 = digitalRead(LINE_SENSOR_PIN_LEFT_MOST);
-      this->signals.value.out2 = digitalRead(LINE_SENSOR_PIN_LEFT);
-      this->signals.value.out3 = digitalRead(LINE_SENSOR_PIN_CENTER);
-      this->signals.value.out4 = digitalRead(LINE_SENSOR_PIN_RIGHT);
-      this->signals.value.out5 = digitalRead(LINE_SENSOR_PIN_RIGHT_MOST);
-
-      values.out1 = this->signals.value.out1;
-      values.out2 = this->signals.value.out2;
-      values.out3 = this->signals.value.out3;
-      values.out4 = this->signals.value.out4;
-      values.out5 = this->signals.value.out5;
-
-      xSemaphoreGive(this->signals.xMutex);
-    }
-    else
-    {
-      ESP_LOGE(this->NAME, "Can't access signals");
-      return;
-    }
-
-    ESP_LOGI(this->NAME, "Inputs: [%d, %d, %d, %d, %d]",
-             values.out1,
-             values.out2,
-             values.out3,
-             values.out4,
-             values.out5);
-
-    LineFollowerDecision decision = this->decide(values);
-
-    if (this->webSocketClient != nullptr)
-    {
-      LineFollowerData lineFollowerData = {
-          .leftMost = values.out1,
-          .left = values.out2,
-          .center = values.out3,
-          .right = values.out4,
-          .rightMost = values.out5,
-          .decision = this->decide2String(decision)};
-      this->webSocketClient->setLineFollowerData(lineFollowerData);
-    }
-
-    this->driveMotor(decision);
-
-    if (values.out1 == 1 &&
-        values.out2 == 1 &&
-        values.out3 == 1 &&
-        values.out4 == 1 &&
-        values.out5 == 1)
-    {
-      this->motorDriver->stop();
-      return;
-    }
-
-    int decision =
-        values.out1 * this->factors[0] +
-        values.out2 * this->factors[1] +
-        values.out3 * this->factors[2] +
-        values.out4 * this->factors[3] +
-        values.out5 * this->factors[4];
-
-    if (this->motorDriver == nullptr)
-    {
-      ESP_LOGE(this->NAME, "Can't find MOTOR DRIVER");
-      return;
-    }
-
-    if (decision == -1 || decision == 2 || decision == 5)
-    {
-      this->motorDriver->moveForward();
-      return;
-    }
-
-    if (decision < 0)
-    {
-      this->motorDriver->moveLeft();
-      return;
-    }
-
-    if (decision > 1)
-    {
-      this->motorDriver->moveRight();
-      return;
-    }
-
-    this->motorDriver->stop();
+    enable = this->enable.value;
+    xSemaphoreGive(this->enable.xMutex);
   }
+
+  if (!enable)
+  {
+    this->driveMotor(STOP);
+    return;
+  }
+
+  LineFollowerSensorValues values = {0, 0, 0, 0, 0};
+
+  if (xSemaphoreTake(this->signals.xMutex, portMAX_DELAY) == pdTRUE)
+  {
+    /**
+     * @brief Out[number] = 1 => sensor catched the line, otherwise, Out[number] = 0
+     */
+    this->signals.value.out1 = digitalRead(LINE_SENSOR_PIN_LEFT_MOST);
+    this->signals.value.out2 = digitalRead(LINE_SENSOR_PIN_LEFT);
+    this->signals.value.out3 = digitalRead(LINE_SENSOR_PIN_CENTER);
+    this->signals.value.out4 = digitalRead(LINE_SENSOR_PIN_RIGHT);
+    this->signals.value.out5 = digitalRead(LINE_SENSOR_PIN_RIGHT_MOST);
+
+    values.out1 = this->signals.value.out1;
+    values.out2 = this->signals.value.out2;
+    values.out3 = this->signals.value.out3;
+    values.out4 = this->signals.value.out4;
+    values.out5 = this->signals.value.out5;
+
+    xSemaphoreGive(this->signals.xMutex);
+  }
+  else
+  {
+    ESP_LOGE(this->NAME, "Can't access signals");
+    return;
+  }
+
+  ESP_LOGI(this->NAME, "Inputs: [%d, %d, %d, %d, %d]",
+           values.out1,
+           values.out2,
+           values.out3,
+           values.out4,
+           values.out5);
+
+  LineFollowerDecision decision = this->decide(values);
+
+  if (this->webSocketClient != nullptr)
+  {
+    LineFollowerData lineFollowerData = {
+        .leftMost = values.out1,
+        .left = values.out2,
+        .center = values.out3,
+        .right = values.out4,
+        .rightMost = values.out5,
+        .decision = this->decide2String(decision)};
+    this->webSocketClient->setLineFollowerData(lineFollowerData);
+  }
+
+  this->driveMotor(decision);
+
+  // if (values.out1 == 1 &&
+  //     values.out2 == 1 &&
+  //     values.out3 == 1 &&
+  //     values.out4 == 1 &&
+  //     values.out5 == 1)
+  // {
+  //   this->motorDriver->stop();
+  //   return;
+  // }
+
+  // int decision =
+  //     values.out1 * this->factors[0] +
+  //     values.out2 * this->factors[1] +
+  //     values.out3 * this->factors[2] +
+  //     values.out4 * this->factors[3] +
+  //     values.out5 * this->factors[4];
+
+  // if (this->motorDriver == nullptr)
+  // {
+  //   ESP_LOGE(this->NAME, "Can't find MOTOR DRIVER");
+  //   return;
+  // }
+
+  // if (decision == -1 || decision == 2 || decision == 5)
+  // {
+  //   this->motorDriver->moveForward();
+  //   return;
+  // }
+
+  // if (decision < 0)
+  // {
+  //   this->motorDriver->moveLeft();
+  //   return;
+  // }
+
+  // if (decision > 1)
+  // {
+  //   this->motorDriver->moveRight();
+  //   return;
+  // }
+
+  // this->motorDriver->stop();
 }
 
 bool LineFollower::getEnable()
@@ -149,11 +160,14 @@ void LineFollower::setEnable(bool value)
 {
   if (xSemaphoreTake(this->enable.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    if (!value)
+    if (value != this->enable.value)
     {
-      this->motorDriver->stop();
+      this->enable.value = value;
+      if (!value)
+      {
+        this->driveMotor(STOP);
+      }
     }
-    this->enable.value = value;
     xSemaphoreGive(this->enable.xMutex);
   }
 }

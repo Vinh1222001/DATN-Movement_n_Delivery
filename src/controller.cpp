@@ -248,7 +248,8 @@ bool Controller::ready()
   ESP_LOGI(this->NAME, "Run Monitor's task successfully");
 
   ESP_LOGI(this->NAME, "All important components have run!");
-  this->setState(PING);
+  // this->setState(PING);
+  this->setState(START);
 
   return true;
 }
@@ -256,19 +257,25 @@ bool Controller::ready()
 bool Controller::ping()
 {
   std::vector<String> pingMsg;
-  pingMsg.push_back("PING");
-  this->communicate->send(String("FIND"), pingMsg);
+  pingMsg.push_back("Request to connect...");
+  this->communicate->send("PING", pingMsg);
 
-  String response = this->communicate->getReceiveMsg();
-  if (response.compareTo("OK") == 0)
+  CommunicateResponse response = this->communicate->getResponse();
+  if (response.header.compareTo("RESPONSE") == 0)
   {
-    ESP_LOGI(this->NAME, "Connection is OK! Received message: %s", response.c_str());
-    this->setState(START);
-    delay(1000);
-    return true;
+    if (response.content[0].compareTo("OK"))
+    {
+      ESP_LOGI(this->NAME, "Connection is OK! Received message: %s", response.content[0].c_str());
+      this->setState(START);
+      delay(1000);
+      return true;
+    }
   }
 
-  ESP_LOGE(this->NAME, "Connection failed! Received message: %s", response.c_str());
+  ESP_LOGE(
+      this->NAME,
+      "Connection failed! Received message: %s",
+      response.content[0].c_str());
   delay(1000);
   return false;
 }
@@ -305,7 +312,7 @@ bool Controller::start()
 
   this->setNextArea(YELLOW);
   this->setState(PICKUP_TRANSIT);
-  // this->setState(CLASSIFY);
+  // this->setState(IDLE);
   return true;
 }
 
@@ -313,10 +320,9 @@ bool Controller::pickup()
 {
   ESP_LOGI(this->NAME, "Pickup");
 
-  this->setNextArea(BLUE);
   ESP_LOGI(this->NAME, "Delivery to BLUE");
   delay(2000);
-  this->setState(DROPOFF_TRANSIT);
+  this->setState(CLASSIFY);
 
   return true;
 }
@@ -349,43 +355,75 @@ bool Controller::classify()
     return false;
   }
 
-  String response = this->communicate->getReceiveMsg();
-  int responseLen = 0;
-  char **classifyResult = StringUtils::split(response.c_str(), ",", &responseLen);
-  for (int i = 0; i < responseLen; ++i)
+  CommunicateResponse response = this->communicate->getResponse();
+
+  if (response.header.compareTo("OBJECT") != 0)
   {
-    ESP_LOGI(this->NAME, "  [%d] %s", i, classifyResult[i]);
+    ESP_LOGE(this->NAME, "Wrong Header! Header: %s", response.header.c_str());
+    return false;
   }
+
+  if (response.content.size() != 1)
+  {
+    ESP_LOGE(this->NAME, "Content size is wrong! Content size: %s", response.content.size());
+    return false;
+  }
+
+  std::vector<String> objInfo = StringUtils::splitString(response.content[0], ',');
+
+  if (objInfo.size() != 6)
+  {
+    ESP_LOGE(this->NAME, "Wrong Object information size! bject information size: %s", objInfo.size());
+    return false;
+  }
+
   ProductTypeData data;
-  data.label = String(classifyResult[0]);
-  data.accuration = String(classifyResult[1]).toDouble();
-  data.x = String(classifyResult[2]).toInt();
-  data.y = String(classifyResult[3]).toInt();
-  data.width = String(classifyResult[4]).toInt();
-  data.height = String(classifyResult[5]).toInt();
+  data.label = objInfo[0];
+  data.accuration = objInfo[1].toDouble();
+  data.x = objInfo[2].toInt();
+  data.y = objInfo[3].toInt();
+  data.width = objInfo[4].toInt();
+  data.height = objInfo[5].toInt();
   this->webSocketClient->setProductTypeData(data);
 
-  StringUtils::freeStringArray(classifyResult, responseLen);
+  std::vector<String> msg;
+  msg.push_back("STOP_CLASSIFY");
+  this->communicate->send("STOP_CLASSIFY", msg);
 
-  if (response.compareTo("TRUE") == 0)
+  if (objInfo[0] == "jerry")
   {
-    std::vector<String> msg;
-    msg.push_back("STOP_CLASSIFY");
-    this->communicate->send("CONTROL", msg);
-    this->setState(IDLE);
-
-    ESP_LOGI(this->NAME, "Classify is %s", response.c_str());
-
-    delay(2000);
-    return true;
+    this->setNextArea(BLUE);
   }
-  ESP_LOGE(this->NAME, "Failed to classify! Message is: %s", response.c_str());
-  return false;
+  else if (objInfo[0] == "vit_lego_vang")
+  {
+    this->setNextArea(RED);
+  }
+  else if (objInfo[0] == "hiep_si")
+  {
+    this->setNextArea(GREEN);
+  }
+  else
+  {
+    ESP_LOGE(this->NAME, "Unknow the label! The label: %s", objInfo[0].c_str());
+    return false;
+  }
+
+  std::vector<String> msg;
+  msg.push_back("STOP_CLASSIFY");
+  this->communicate->send("STOP_CLASSIFY", msg);
+  this->setState(DROPOFF_TRANSIT);
+
+  ESP_LOGI(this->NAME, "Classify is %s", objInfo[0].c_str());
+
+  delay(1000);
+  return true;
 }
 
 bool Controller::idle()
 {
   ESP_LOGI(this->NAME, "Idle");
+  ColorSet currentColor = this->colorDetector->getColor().color;
+  ESP_LOGI(this->NAME, "Current color: %s", this->colorDetector->colorToString(currentColor));
   return true;
 }
 
@@ -399,7 +437,9 @@ bool Controller::pickupTransit()
   }
 
   this->lineFollower->setEnable(true);
-  if (this->colorDetector->getColor().color == this->nextArea)
+  ColorSet currentColor = this->colorDetector->getColor().color;
+  ESP_LOGI(this->NAME, "Current color: %s", this->colorDetector->colorToString(currentColor));
+  if (currentColor == this->nextArea)
   {
     ESP_LOGI(this->NAME, "Arrived Pick up arera");
     this->lineFollower->setEnable(false);
@@ -422,7 +462,10 @@ bool Controller::dropoffTransit()
     ESP_LOGE(this->NAME, "Some component is still null");
     return false;
   }
-  if (this->colorDetector->getColor().color == this->nextArea)
+
+  ColorSet currentColor = this->colorDetector->getColor().color;
+  ESP_LOGI(this->NAME, "Current color: %s", this->colorDetector->colorToString(currentColor));
+  if (currentColor == this->nextArea)
   {
     ESP_LOGI(this->NAME, "Arrived Drop off arera");
     this->lineFollower->setEnable(false);
