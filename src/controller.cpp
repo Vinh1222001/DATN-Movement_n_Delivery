@@ -285,41 +285,49 @@ bool Controller::start()
   this->runComponent(this->colorDetector);
   ESP_LOGI(this->NAME, "Run colorDetector's task successfully");
 
-  // if (!this->lineFollower)
-  // {
-  //   ESP_LOGE(this->NAME, "lineFollower is not initialized");
-  //   return false;
-  // }
-  // this->runComponent(this->lineFollower);
-  // ESP_LOGI(this->NAME, "Run lineFollower's task successfully");
+  if (!this->lineFollower)
+  {
+    ESP_LOGE(this->NAME, "lineFollower is not initialized");
+    return false;
+  }
+  this->runComponent(this->lineFollower);
+  ESP_LOGI(this->NAME, "Run lineFollower's task successfully");
 
-  // if (!this->motorDriver)
-  // {
-  //   ESP_LOGE(this->NAME, "motorDriver is not initialized");
-  //   return false;
-  // }
-  // this->runComponent(this->motorDriver);
-  // ESP_LOGI(this->NAME, "Run motorDriver's task successfully");
+  if (!this->motorDriver)
+  {
+    ESP_LOGE(this->NAME, "motorDriver is not initialized");
+    return false;
+  }
+  this->runComponent(this->motorDriver);
+  ESP_LOGI(this->NAME, "Run motorDriver's task successfully");
 
   ESP_LOGI(this->NAME, "All components have run!");
-  // this->setState(PICKUP_TRANSIT);
-  this->setState(CLASSIFY);
+
+  this->setNextArea(YELLOW);
+  this->setState(PICKUP_TRANSIT);
+  // this->setState(CLASSIFY);
   return true;
 }
 
 bool Controller::pickup()
 {
   ESP_LOGI(this->NAME, "Pickup");
-  if (this->colorDetector == nullptr &&
-      this->colorDetector->getColor().color == NONE)
-    return false;
 
-  return this->colorDetector->getColor().color == this->nextArea;
+  this->setNextArea(BLUE);
+  ESP_LOGI(this->NAME, "Delivery to BLUE");
+  delay(2000);
+  this->setState(DROPOFF_TRANSIT);
+
+  return true;
 }
 
 bool Controller::dropoff()
 {
   ESP_LOGI(this->NAME, "Dropoff");
+  this->setNextArea(YELLOW);
+  ESP_LOGI(this->NAME, "Move to to YELLOW");
+  delay(2000);
+  this->setState(PICKUP_TRANSIT);
   return true;
 }
 
@@ -384,17 +392,46 @@ bool Controller::idle()
 bool Controller::pickupTransit()
 {
   ESP_LOGI(this->NAME, "Pickup Transit");
-  return true;
+  if (this->lineFollower == nullptr || this->colorDetector == nullptr)
+  {
+    ESP_LOGE(this->NAME, "Some component is still null");
+    return false;
+  }
+
+  this->lineFollower->setEnable(true);
+  if (this->colorDetector->getColor().color == this->nextArea)
+  {
+    ESP_LOGI(this->NAME, "Arrived Pick up arera");
+    this->lineFollower->setEnable(false);
+    this->setState(PICKUP);
+    delay(3000);
+    return true;
+  }
+
+  ESP_LOGI(this->NAME, "In Pick up transit....");
+  return false;
 }
 
 bool Controller::dropoffTransit()
 {
   ESP_LOGI(this->NAME, "Dropoff Transit");
-  if (this->colorDetector == nullptr)
+  this->lineFollower->setEnable(true);
+
+  if (this->lineFollower == nullptr || this->colorDetector == nullptr)
   {
+    ESP_LOGE(this->NAME, "Some component is still null");
     return false;
   }
-  return this->colorDetector->getColor().color != NONE;
+  if (this->colorDetector->getColor().color == this->nextArea)
+  {
+    ESP_LOGI(this->NAME, "Arrived Drop off arera");
+    this->lineFollower->setEnable(false);
+    this->setState(DROPOFF);
+    delay(3000);
+    return true;
+  }
+  ESP_LOGI(this->NAME, "In Drop off transit....");
+  return false;
 }
 
 bool Controller::setNextArea(ColorSet area)

@@ -40,7 +40,7 @@ private:
   const int factors[5] = {-4, -3, 2, 3, 4};
 
   LineFollowerSignals signals;
-  Types::SemaphoreMutexData<bool> isRobotArrived;
+  Types::SemaphoreMutexData<bool> enable;
 
   MotorDriver *motorDriver = nullptr;
   RWebSocketClient *webSocketClient = nullptr;
@@ -55,7 +55,8 @@ public:
   LineFollower(MotorDriver *motorDriver = nullptr, RWebSocketClient *webSocketClient = nullptr);
   ~LineFollower();
 
-  bool isArrived();
+  bool getEnable();
+  void setEnable(bool value);
   LineFollowerSensorValues getLineFollowerValues();
 };
 
