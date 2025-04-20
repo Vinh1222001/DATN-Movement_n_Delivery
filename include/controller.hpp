@@ -9,7 +9,8 @@
 #include "web_server.hpp"
 #include "color_detector.hpp"
 #include "mpu_reader.hpp"
-#include "classifying_communicate.hpp"
+// #include "classifying_communicate.hpp"
+#include "communicate.hpp"
 
 enum RobotState
 {
@@ -34,7 +35,7 @@ private:
   RobotState state;
 
   RWebSocketClient *webSocketClient = nullptr;
-  ClassifyingCommunicate *communicate = nullptr;
+  Communicate *communicate = nullptr;
   Monitor *monitor = nullptr;
 
   MotorDriver *motorDriver = nullptr;

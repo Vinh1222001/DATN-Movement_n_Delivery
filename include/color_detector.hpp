@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "base_module.hpp"
 #include "types.hpp"
+#include "utils/compare.hpp"
 #include "web_server.hpp"
 #include "monitor.hpp"
 

@@ -1,4 +1,5 @@
 #include "controller.hpp"
+#include "utils/stringUtils.hpp"
 
 Controller::Controller()
     : BaseModule(
@@ -105,8 +106,8 @@ void Controller::runComponent(BaseModule *component)
 bool Controller::init()
 {
   ESP_LOGI(this->NAME, "Initialize components...");
-
-  this->communicate = new ClassifyingCommunicate();
+  uint8_t mac[6] = {0x08, 0xd1, 0xf9, 0x38, 0xa8, 0xac};
+  this->communicate = new Communicate(mac);
   if (this->communicate == nullptr)
   {
     ESP_LOGE(this->NAME, "Failed to init Communicate");
@@ -256,14 +257,13 @@ bool Controller::ping()
 {
   std::vector<String> pingMsg;
   pingMsg.push_back("PING");
-  this->communicate->send(pingMsg);
+  this->communicate->send(String("FIND"), pingMsg);
 
   String response = this->communicate->getReceiveMsg();
   if (response.compareTo("OK") == 0)
   {
     ESP_LOGI(this->NAME, "Connection is OK! Received message: %s", response.c_str());
-    // this->setState(START);
-    this->setState(CLASSIFY);
+    this->setState(START);
     delay(1000);
     return true;
   }
@@ -285,24 +285,25 @@ bool Controller::start()
   this->runComponent(this->colorDetector);
   ESP_LOGI(this->NAME, "Run colorDetector's task successfully");
 
-  if (!this->lineFollower)
-  {
-    ESP_LOGE(this->NAME, "lineFollower is not initialized");
-    return false;
-  }
-  this->runComponent(this->lineFollower);
-  ESP_LOGI(this->NAME, "Run lineFollower's task successfully");
+  // if (!this->lineFollower)
+  // {
+  //   ESP_LOGE(this->NAME, "lineFollower is not initialized");
+  //   return false;
+  // }
+  // this->runComponent(this->lineFollower);
+  // ESP_LOGI(this->NAME, "Run lineFollower's task successfully");
 
-  if (!this->motorDriver)
-  {
-    ESP_LOGE(this->NAME, "motorDriver is not initialized");
-    return false;
-  }
-  this->runComponent(this->motorDriver);
-  ESP_LOGI(this->NAME, "Run motorDriver's task successfully");
+  // if (!this->motorDriver)
+  // {
+  //   ESP_LOGE(this->NAME, "motorDriver is not initialized");
+  //   return false;
+  // }
+  // this->runComponent(this->motorDriver);
+  // ESP_LOGI(this->NAME, "Run motorDriver's task successfully");
 
   ESP_LOGI(this->NAME, "All components have run!");
-  this->setState(PICKUP_TRANSIT);
+  // this->setState(PICKUP_TRANSIT);
+  this->setState(CLASSIFY);
   return true;
 }
 
@@ -335,17 +336,34 @@ bool Controller::classify()
   {
     std::vector<String> msg;
     msg.push_back("CLASSIFY");
-    this->communicate->send(msg);
+    this->communicate->send("CLASSIFY", msg);
     this->isClassifying = true;
     return false;
   }
 
   String response = this->communicate->getReceiveMsg();
+  int responseLen = 0;
+  char **classifyResult = StringUtils::split(response.c_str(), ",", &responseLen);
+  for (int i = 0; i < responseLen; ++i)
+  {
+    ESP_LOGI(this->NAME, "  [%d] %s", i, classifyResult[i]);
+  }
+  ProductTypeData data;
+  data.label = String(classifyResult[0]);
+  data.accuration = String(classifyResult[1]).toDouble();
+  data.x = String(classifyResult[2]).toInt();
+  data.y = String(classifyResult[3]).toInt();
+  data.width = String(classifyResult[4]).toInt();
+  data.height = String(classifyResult[5]).toInt();
+  this->webSocketClient->setProductTypeData(data);
+
+  StringUtils::freeStringArray(classifyResult, responseLen);
+
   if (response.compareTo("TRUE") == 0)
   {
     std::vector<String> msg;
     msg.push_back("STOP_CLASSIFY");
-    this->communicate->send(msg);
+    this->communicate->send("CONTROL", msg);
     this->setState(IDLE);
 
     ESP_LOGI(this->NAME, "Classify is %s", response.c_str());

@@ -57,23 +57,24 @@ void ColorDetector::printColor()
          this->color.value.green,
          this->color.value.blue});
 
-    const char *color = (maxValue == this->color.value.red)
-                            ? "Red"
-                        : (maxValue == this->color.value.green)
-                            ? "Green"
-                            : "Blue";
+    ColorSet colorCode = this->detectColor(
+        this->color.value.red,
+        this->color.value.green,
+        this->color.value.blue);
+
+    String color = this->colorToString(colorCode);
 
     ESP_LOGI(
         this->NAME,
         "Color:%s, RGB code: %d, %d, %d\n",
-        color,
+        color.c_str(),
         this->color.value.red,
         this->color.value.green,
         this->color.value.blue);
 
     this->monitor->display(MONITOR_LINE_COLOR_DETECTOR,
                            "Color: %s (R%d, G%d, B%d)",
-                           color,
+                           color.c_str(),
                            this->color.value.red,
                            this->color.value.green,
                            this->color.value.blue);
@@ -136,25 +137,57 @@ ColorRGB ColorDetector::getColor()
 
 ColorSet ColorDetector::detectColor(int r, int g, int b)
 {
-  if (r > 150 && g < 100 && b < 100)
+  // if (r > 150 && g < 100 && b < 100)
+  // {
+  //   return RED;
+  // }
+  // else if (r < 100 && g < 150 && b > 150)
+  // {
+  //   return BLUE;
+  // }
+  // else if (r < 100 && g > 150 && b < 100)
+  // {
+  //   return GREEN;
+  // }
+  // else if (r > 150 && g > 150 && b < 100)
+  // {
+  //   return YELLOW;
+  // }
+  // else
+  // {
+  //   return NONE; // No recognized color
+  // }
+  if (
+      CompareUtils::isInConstraint<int>(r, 190, 256) &&
+      CompareUtils::isInConstraint<int>(g, 50, 150) &&
+      CompareUtils::isInConstraint<int>(b, 100, 150))
   {
     return RED;
   }
-  else if (b > 150 && g < 150 && r < 100)
-  {
-    return BLUE;
-  }
-  else if (g > 150 && r < 100 && b < 100)
+  else if (
+      CompareUtils::isInConstraint<int>(r, 150, 200) &&
+      CompareUtils::isInConstraint<int>(g, 200, 256) &&
+      CompareUtils::isInConstraint<int>(b, 150, 200))
   {
     return GREEN;
   }
-  else if (r > 150 && g > 150 && b < 100)
+  else if (
+      CompareUtils::isInConstraint<int>(r, 50, 130) &&
+      CompareUtils::isInConstraint<int>(g, 100, 170) &&
+      CompareUtils::isInConstraint<int>(b, 200, 256))
+  {
+    return BLUE;
+  }
+  else if (
+      CompareUtils::isInConstraint<int>(r, 200, 256) &&
+      CompareUtils::isInConstraint<int>(g, 200, 256) &&
+      CompareUtils::isInConstraint<int>(b, 150, 200))
   {
     return YELLOW;
   }
   else
   {
-    return NONE; // No recognized color
+    return NONE;
   }
 }
 
@@ -168,6 +201,8 @@ String ColorDetector::colorToString(ColorSet color)
     return String("GREEN");
   case BLUE:
     return String("BLUE");
+  case YELLOW:
+    return String("YELLOW");
   default:
     return String("NONE");
   }
