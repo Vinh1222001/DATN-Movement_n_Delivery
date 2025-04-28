@@ -4,15 +4,17 @@
 
 #include <Arduino.h>
 #include "types.hpp"
+#include "utils/assign.hpp"
 #include "base_module.hpp"
 #include "motor_driver.hpp"
 #include "web_server.hpp"
+#include "utils/compare.hpp"
 
 #define LINE_SENSOR_PIN_LEFT_MOST GPIO_NUM_33
 #define LINE_SENSOR_PIN_LEFT GPIO_NUM_39
 #define LINE_SENSOR_PIN_CENTER GPIO_NUM_36
 #define LINE_SENSOR_PIN_RIGHT GPIO_NUM_35
-#define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_34
+#define LINE_SENSOR_PIN_RIGHT_MOST GPIO_NUM_4
 
 struct LineFollowerSensorValues
 {
@@ -52,7 +54,9 @@ private:
   void taskFn() override;
 
 public:
-  LineFollower(MotorDriver *motorDriver = nullptr, RWebSocketClient *webSocketClient = nullptr);
+  LineFollower(
+      // MotorDriver *motorDriver = nullptr,
+      RWebSocketClient *webSocketClient = nullptr);
   ~LineFollower();
 
   bool getEnable();

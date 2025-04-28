@@ -7,11 +7,12 @@
 #include "base_module.hpp"
 #include "types.hpp"
 #include "utils/compare.hpp"
+#include "utils/assign.hpp"
 #include "web_server.hpp"
 #include "monitor.hpp"
 
-#define COLOR_DETECTOR_PIN_S0 GPIO_NUM_4
-#define COLOR_DETECTOR_PIN_S1 GPIO_NUM_5
+// #define COLOR_DETECTOR_PIN_S0 GPIO_NUM_4
+// #define COLOR_DETECTOR_PIN_S1 GPIO_NUM_5
 #define COLOR_DETECTOR_PIN_S2 GPIO_NUM_18
 #define COLOR_DETECTOR_PIN_S3 GPIO_NUM_19
 #define COLOR_DETECTOR_PIN_SENSOR_OUT GPIO_NUM_14
@@ -50,17 +51,17 @@ private:
   int getGreen();
   int getBlue();
 
-  ColorSet detectColor(int r, int g, int b);
-  
-  void printColor();
+  static ColorRGB detectColor(int r, int g, int b);
+
+  static void printColor(ColorRGB color, Monitor *monitor);
 
   void taskFn() override;
-  
-public:
-ColorDetector(Monitor *monitor = nullptr, RWebSocketClient *webSocketClient = nullptr);
-~ColorDetector();
 
-String colorToString(ColorSet color);
+public:
+  ColorDetector(Monitor *monitor = nullptr, RWebSocketClient *webSocketClient = nullptr);
+  ~ColorDetector();
+
+  static String colorToString(ColorSet color);
   ColorRGB getColor();
 };
 

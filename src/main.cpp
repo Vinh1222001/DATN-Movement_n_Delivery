@@ -1,5 +1,7 @@
 #include "main.hpp"
 
+#define WIFI_SSID "Vinhtage"
+#define WIFI_PASSWORD "haochoancuc"
 const char *TAG = "SETUP";
 
 IPAddress localIP(192, 168, 2, 210);
@@ -21,7 +23,6 @@ void setup()
   Serial.setDebugOutput(true);
 
   esp_log_level_set("*", ESP_LOG_VERBOSE);
-  ESP_LOGD("EXAMPLE", "This doesn't show");
 
   log_v("Verbose");
   log_d("Debug");
@@ -31,15 +32,20 @@ void setup()
 
   ESP_LOGI(TAG, "Initializing...\n");
 
-  WifiUtil::initWifi(
-      WIFI_SSID,
-      WIFI_PASSWORD,
-      true,
-      localIP,
-      gateway,
-      subnet,
-      primaryDNS,
-      secondaryDNS);
+  while (
+      !WifiUtil::initWifi(
+          WIFI_SSID,
+          WIFI_PASSWORD,
+          true,
+          localIP,
+          gateway,
+          subnet,
+          primaryDNS,
+          secondaryDNS))
+  {
+    ESP_LOGI(TAG, "Retry to connect wifi! SSID: %s, PASSWORD: %s", WIFI_SSID, WIFI_PASSWORD);
+    delay(1000);
+  }
 
   Controller *controller = new Controller();
 
@@ -52,19 +58,9 @@ void setup()
   controller->createTask();
   delay(2000);
   controller->run();
-
-  // ClassifyingCommunicate *communicate = new ClassifyingCommunicate();
-  // if (communicate->begin())
-  // {
-  //   ESP_LOGI("ESP32 B", "ESP-NOW Initialized Successfully");
-  // }
-  // else
-  // {
-  //   ESP_LOGE("ESP32 B", "Failed to initialize ESP-NOW");
-  // }
 }
 
 void loop()
 {
-  delay(1000);
+  delay(1);
 }

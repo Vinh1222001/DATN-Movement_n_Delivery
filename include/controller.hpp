@@ -4,12 +4,10 @@
 
 #include "base_module.hpp"
 #include "line_follower.hpp"
-#include "motor_driver.hpp"
 #include "monitor.hpp"
 #include "web_server.hpp"
 #include "color_detector.hpp"
 #include "mpu_reader.hpp"
-// #include "classifying_communicate.hpp"
 #include "communicate.hpp"
 
 enum RobotState
@@ -27,10 +25,21 @@ enum RobotState
   IDLE,
 };
 
+enum ProductClassProps
+{
+  LABEL = 0,
+  ACCURATION,
+  X,
+  Y,
+  WIDTH,
+  HEIGHT,
+};
+
 class Controller : public BaseModule
 {
 private:
   bool isClassifying;
+  bool isMoving;
   ColorSet nextArea;
   RobotState state;
 
@@ -38,9 +47,10 @@ private:
   Communicate *communicate = nullptr;
   Monitor *monitor = nullptr;
 
-  MotorDriver *motorDriver = nullptr;
   LineFollower *lineFollower = nullptr;
   ColorDetector *colorDetector = nullptr;
+
+  MPUReader *mpuReader = nullptr;
 
   bool init();
   bool setup();

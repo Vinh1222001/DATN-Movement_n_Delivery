@@ -12,6 +12,8 @@ Monitor::Monitor()
 
   this->ui.xMutex = xSemaphoreCreateMutex();
 
+  this->robotStateStr = SetUtils::initMutexData<String>("INIT");
+
   this->monitor->begin();
   this->monitor->setFont(MONITOR_FONT);
 
@@ -19,6 +21,9 @@ Monitor::Monitor()
   this->ui.value.fontWidth = this->monitor->getMaxCharWidth();
   this->ui.value.numOflines = MONITOR_SCREEN_HEIGHT / (this->ui.value.fontHeight + MONITOR_LINE_SPACING);
   this->ui.value.buffer = std::vector<std::string>(this->ui.value.numOflines, "");
+
+  pinMode(MONITOR_POWER_PIN, INPUT);
+  analogReadResolution(12);
 
   ESP_LOGI(this->NAME, "Monitor initialized with %d lines", this->ui.value.numOflines);
 }
@@ -30,20 +35,23 @@ Monitor::~Monitor()
 
 void Monitor::taskFn()
 {
+  this->displaySystemLine();
+  Screen ui;
   if (xSemaphoreTake(this->ui.xMutex, portMAX_DELAY) == pdTRUE)
   {
-    this->monitor->clearBuffer();
-    this->monitor->setFont(MONITOR_FONT);
-
-    for (int i = 0; i < this->ui.value.numOflines; i++)
-    {
-      this->monitor->setCursor(0, (i + 1) * (this->ui.value.fontHeight + MONITOR_LINE_SPACING));
-      this->monitor->print(this->ui.value.buffer[i].c_str());
-    }
-
+    ui = this->ui.value;
     xSemaphoreGive(this->ui.xMutex);
-    this->monitor->sendBuffer();
   }
+  this->monitor->clearBuffer();
+  this->monitor->setFont(MONITOR_FONT);
+
+  for (int i = 0; i < ui.numOflines; i++)
+  {
+    this->monitor->setCursor(0, (i + 1) * (ui.fontHeight + MONITOR_LINE_SPACING));
+    this->monitor->print(ui.buffer[i].c_str());
+  }
+
+  this->monitor->sendBuffer();
 }
 
 void Monitor::display(int line, const char *format, ...)
@@ -51,13 +59,18 @@ void Monitor::display(int line, const char *format, ...)
   if (line < 0 || line >= this->ui.value.numOflines)
     return;
 
+  if (line <= 0)
+  {
+    line = 1;
+  }
+
   char buffer[64];
   va_list args;
   va_start(args, format);
   vsnprintf(buffer, sizeof(buffer), format, args);
   va_end(args);
 
-  if (xSemaphoreTake(this->ui.xMutex, portMAX_DELAY) == pdTRUE)
+  if (xSemaphoreTake(this->ui.xMutex, pdTICKS_TO_MS(10)) == pdTRUE)
   {
     if (this->ui.value.buffer[line] != buffer)
     {
@@ -65,4 +78,36 @@ void Monitor::display(int line, const char *format, ...)
     }
     xSemaphoreGive(this->ui.xMutex);
   };
+}
+
+void Monitor::setRobotState(String state)
+{
+  SetUtils::setMutexData<String>(this->robotStateStr, state);
+}
+
+void Monitor::displaySystemLine()
+{
+  String controllerStateStr;
+  GetUtils::getMutexData<String>(
+      this->robotStateStr,
+      [&](String value)
+      {
+        controllerStateStr = value;
+      });
+  int supplyLevel = analogRead(GPIO_NUM_34);
+
+  String supplyLevelStr(map(supplyLevel, 0, 4096, 0, 100));
+  supplyLevelStr = "B:" + supplyLevelStr + "%";
+  uint32_t controllerStateStrLen = this->monitor->getStrWidth(controllerStateStr.c_str());
+  uint32_t supplyLevelStrLen = this->monitor->getStrWidth(supplyLevelStr.c_str());
+  uint32_t numOfSpace = (this->monitor->getDisplayWidth() - controllerStateStrLen - supplyLevelStrLen) / this->monitor->getStrWidth(" ");
+
+  String content = controllerStateStr;
+  for (uint32_t i = 0; i < numOfSpace - 1; i++)
+  {
+    content += " ";
+  }
+  content += supplyLevelStr;
+
+  this->display(0, "%s", content.c_str());
 }

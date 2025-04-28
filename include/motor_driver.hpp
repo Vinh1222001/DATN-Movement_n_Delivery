@@ -8,6 +8,7 @@
 #include "PID.hpp"
 #include "PID.cpp"
 #include "mpu_reader.hpp"
+#include "utils/assign.hpp"
 
 #define MOTOR_DRIVER_PIN_IN4 GPIO_NUM_32
 #define MOTOR_DRIVER_PIN_IN3 GPIO_NUM_25
@@ -50,7 +51,7 @@ private:
 
   void taskFn() override;
   void writeState(const uint8_t val);
-  void writeSpeed(const int left, const int right);
+  void commit(uint8_t state, Speed speed);
 
 public:
   MotorDriver();
@@ -63,6 +64,12 @@ public:
   void moveLeft();
   void moveRight();
   void stop();
+
+  void moveForwardSync(int speed = 90);
+  void moveBackwardSync(int speed = 90);
+  void moveLeftSync(int speed = 90);
+  void moveRightSync(int speed = 90);
+  void stopSync();
 };
 
 #endif

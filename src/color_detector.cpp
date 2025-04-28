@@ -12,18 +12,16 @@ ColorDetector::ColorDetector(
       monitor(monitor),
       webSocketClient(webSocketClient)
 {
+  this->color = SetUtils::initMutexData<ColorRGB>({0, 0, 0, ColorSet::NONE});
 
-  this->color.value = {0, 0, 0};
-  this->color.xMutex = xSemaphoreCreateMutex();
-
-  pinMode(COLOR_DETECTOR_PIN_S0, OUTPUT);
-  pinMode(COLOR_DETECTOR_PIN_S1, OUTPUT);
+  // pinMode(COLOR_DETECTOR_PIN_S0, OUTPUT);
+  // pinMode(COLOR_DETECTOR_PIN_S1, OUTPUT);
   pinMode(COLOR_DETECTOR_PIN_S2, OUTPUT);
   pinMode(COLOR_DETECTOR_PIN_S3, OUTPUT);
   pinMode(COLOR_DETECTOR_PIN_SENSOR_OUT, INPUT);
 
-  digitalWrite(COLOR_DETECTOR_PIN_S0, HIGH);
-  digitalWrite(COLOR_DETECTOR_PIN_S1, LOW);
+  // digitalWrite(COLOR_DETECTOR_PIN_S0, HIGH);
+  // digitalWrite(COLOR_DETECTOR_PIN_S1, LOW);
 }
 ColorDetector::~ColorDetector() {}
 
@@ -48,34 +46,23 @@ int ColorDetector::getBlue()
   return pulseIn(COLOR_DETECTOR_PIN_SENSOR_OUT, LOW);
 }
 
-void ColorDetector::printColor()
+void ColorDetector::printColor(ColorRGB color, Monitor *monitor)
 {
-  ColorRGB colorElement;
-  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
-  {
-    colorElement = this->color.value;
-    xSemaphoreGive(this->color.xMutex);
-  }
-  ColorSet colorCode = this->detectColor(
-      colorElement.red,
-      colorElement.green,
-      colorElement.blue);
-
-  String color = this->colorToString(colorCode);
-  this->monitor->display(MONITOR_LINE_COLOR_DETECTOR,
-                         "Color: %s (R%d, G%d, B%d)",
-                         color.c_str(),
-                         colorElement.red,
-                         colorElement.green,
-                         colorElement.blue);
+  String colorStr = ColorDetector::colorToString(color.color);
+  monitor->display(MONITOR_LINE_COLOR_DETECTOR,
+                   "C:%s[%d,%d,%d]",
+                   colorStr.c_str(),
+                   constrain(color.red, 0, 255),
+                   constrain(color.green, 0, 255),
+                   constrain(color.blue, 0, 255));
 
   ESP_LOGI(
-      this->NAME,
+      "PRINT_COLOR",
       "Color:%s, RGB code: %d, %d, %d",
-      color.c_str(),
-      colorElement.red,
-      colorElement.green,
-      colorElement.blue);
+      colorStr.c_str(),
+      color.red,
+      color.green,
+      color.blue);
 }
 
 void ColorDetector::taskFn()
@@ -92,91 +79,86 @@ void ColorDetector::taskFn()
   int blue = map(rawBlue, this->MIN_BLUE, this->MAX_BLUE, 255, 0);
   delay(COLOR_DETECTOR_FILTER_DELAY);
 
-  ColorSet color = this->detectColor(red, green, blue);
+  ColorRGB color = ColorDetector::detectColor(red, green, blue);
 
-  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
-  {
-    this->color.value = {
-        .red = red,
-        .green = green,
-        .blue = blue,
-        .color = color};
-    xSemaphoreGive(this->color.xMutex);
-  }
+  SetUtils::setMutexData<ColorRGB>(this->color, color);
+  IS_NULL(this->monitor);
+  this->printColor(color, this->monitor);
 
-  if (this->webSocketClient != nullptr)
-  {
-    ColorDetectorData colorDetectorData = {
-        .red = red,
-        .green = green,
-        .blue = blue,
-        .color = this->colorToString(color)};
+  IS_NULL(this->webSocketClient);
+  ColorDetectorData colorDetectorData = {
+      .red = red,
+      .green = green,
+      .blue = blue,
+      .color = this->colorToString(color.color)};
 
-    this->webSocketClient->setColorDetectorData(colorDetectorData);
-  }
-
-  this->printColor();
+  this->webSocketClient->setColorDetectorData(colorDetectorData);
 }
 
 ColorRGB ColorDetector::getColor()
 {
   ColorRGB color;
-  if (xSemaphoreTake(this->color.xMutex, portMAX_DELAY) == pdTRUE)
-  {
-    color = this->color.value;
-    xSemaphoreGive(this->color.xMutex);
-  }
+
+  GetUtils::getMutexData<ColorRGB>(
+      this->color,
+      [&](ColorRGB value)
+      {
+        color = value;
+      });
 
   return color;
 }
 
-ColorSet ColorDetector::detectColor(int r, int g, int b)
+ColorRGB ColorDetector::detectColor(int r, int g, int b)
 {
+  ColorRGB color = {
+      .red = r,
+      .green = g,
+      .blue = b,
+      .color = ColorSet::NONE};
   if (
       CompareUtils::isInConstraint<int>(r, 150, 256) &&
       CompareUtils::isInConstraint<int>(g, 0, 50) &&
       CompareUtils::isInConstraint<int>(b, 0, 100))
   {
-    return RED;
+    color.color = ColorSet::RED;
   }
   else if (
       CompareUtils::isInConstraint<int>(r, 150, 200) &&
       CompareUtils::isInConstraint<int>(g, 150, 256) &&
       CompareUtils::isInConstraint<int>(b, 130, 160))
   {
-    return GREEN;
+    color.color = ColorSet::GREEN;
   }
   else if (
       CompareUtils::isInConstraint<int>(r, 0, 50) &&
       CompareUtils::isInConstraint<int>(g, 0, 150) &&
       CompareUtils::isInConstraint<int>(b, 190, 256))
   {
-    return BLUE;
+    color.color = ColorSet::BLUE;
   }
   else if (
       CompareUtils::isInConstraint<int>(r, 200, 256) &&
       CompareUtils::isInConstraint<int>(g, 200, 256) &&
       CompareUtils::isInConstraint<int>(b, 150, 200))
   {
-    return YELLOW;
+    color.color = ColorSet::YELLOW;
   }
-  else
-  {
-    return NONE;
-  }
+
+  return color;
 }
 
 String ColorDetector::colorToString(ColorSet color)
 {
   switch (color)
   {
-  case RED:
+  case ColorSet::RED:
     return String("RED");
-  case GREEN:
+  case ColorSet::GREEN:
     return String("GREEN");
-  case BLUE:
+  case ColorSet::BLUE:
     return String("BLUE");
-  case YELLOW:
+  case ColorSet::YELLOW:
     return String("YELLOW");
   default:
     return String("NONE");
