@@ -234,7 +234,7 @@ bool Controller::ready()
   ESP_LOGI(this->NAME, "Run Mpu Reader's task successfully");
 
   ESP_LOGI(this->NAME, "All important components have run!");
-  this->setState(RobotState::START);
+  this->setState(RobotState::PING);
 
   return true;
 }
@@ -306,7 +306,7 @@ bool Controller::dropoff()
   ESP_LOGI(this->NAME, "Dropoff");
   this->setNextArea(YELLOW);
   ESP_LOGI(this->NAME, "Move to to YELLOW");
-  delay(2000);
+  delay(5000);
   this->setState(RobotState::PICKUP_TRANSIT);
   return true;
 }
@@ -446,7 +446,7 @@ bool Controller::dropoffTransit()
     if (this->isMoving)
     {
       this->lineFollower->setEnable(false);
-      this->isMoving = true;
+      this->isMoving = false;
     }
     this->setState(RobotState::DROPOFF);
     this->monitor->setRobotState("DROPOFF");

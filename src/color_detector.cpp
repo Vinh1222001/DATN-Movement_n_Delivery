@@ -131,8 +131,8 @@ ColorRGB ColorDetector::detectColor(int r, int g, int b)
     color.color = ColorSet::GREEN;
   }
   else if (
-      CompareUtils::isInConstraint<int>(r, 0, 50) &&
-      CompareUtils::isInConstraint<int>(g, 0, 150) &&
+      CompareUtils::isInConstraint<int>(r, 0, 60) &&
+      CompareUtils::isInConstraint<int>(g, 0, 160) &&
       CompareUtils::isInConstraint<int>(b, 190, 256))
   {
     color.color = ColorSet::BLUE;

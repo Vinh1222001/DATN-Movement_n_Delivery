@@ -177,16 +177,16 @@ void LineFollower::driveMotor(LineFollowerDecision decision)
   switch (decision)
   {
   case LEFT:
-    this->motorDriver->moveLeftSync(100);
+    this->motorDriver->moveLeftSync(75);
     break;
   case RIGHT:
-    this->motorDriver->moveRightSync(100);
+    this->motorDriver->moveRightSync(75);
     break;
   case FORWARD:
-    this->motorDriver->moveForwardSync(120);
+    this->motorDriver->moveForwardSync(75);
     break;
   case BACKWARD:
-    this->motorDriver->moveBackwardSync(120);
+    this->motorDriver->moveBackwardSync(70);
     break;
   case STOP:
   default:

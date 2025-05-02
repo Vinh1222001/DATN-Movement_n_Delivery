@@ -59,18 +59,13 @@ void Monitor::display(int line, const char *format, ...)
   if (line < 0 || line >= this->ui.value.numOflines)
     return;
 
-  if (line <= 0)
-  {
-    line = 1;
-  }
-
   char buffer[64];
   va_list args;
   va_start(args, format);
   vsnprintf(buffer, sizeof(buffer), format, args);
   va_end(args);
 
-  if (xSemaphoreTake(this->ui.xMutex, pdTICKS_TO_MS(10)) == pdTRUE)
+  if (xSemaphoreTake(this->ui.xMutex, portMAX_DELAY) == pdTRUE)
   {
     if (this->ui.value.buffer[line] != buffer)
     {
