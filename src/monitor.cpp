@@ -6,7 +6,7 @@ Monitor::Monitor()
           MONITOR_TASK_PRIORITY,
           MONITOR_TASK_DELAY,
           MONITOR_TASK_STACK_DEPTH_LEVEL,
-          MONITOR_TASK_PINNED_CORE_ID)
+          0)
 {
   this->monitor = new U8G2_SH1106_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE);
 
@@ -17,15 +17,25 @@ Monitor::Monitor()
   this->monitor->begin();
   this->monitor->setFont(MONITOR_FONT);
 
-  this->ui.value.fontHeight = this->monitor->getMaxCharHeight();
-  this->ui.value.fontWidth = this->monitor->getMaxCharWidth();
-  this->ui.value.numOflines = MONITOR_SCREEN_HEIGHT / (this->ui.value.fontHeight + MONITOR_LINE_SPACING);
-  this->ui.value.buffer = std::vector<std::string>(this->ui.value.numOflines, "");
+  this->displayWidth = this->monitor->getDisplayWidth();
+  this->fontHeight = this->monitor->getMaxCharHeight();
+  this->fontWidth = this->monitor->getMaxCharWidth();
+  this->numOflines = MONITOR_SCREEN_HEIGHT / (this->fontHeight + MONITOR_LINE_SPACING);
+
+  for (uint32_t i = 0; i < this->numOflines; i++)
+  {
+    this->ui.value.push_back("");
+  }
+
+  /**
+   * @brief Robot State Queue
+   */
+  this->robotStateQueue = xQueueCreate(10, sizeof(String));
 
   pinMode(MONITOR_POWER_PIN, INPUT);
   analogReadResolution(12);
 
-  ESP_LOGI(this->NAME, "Monitor initialized with %d lines", this->ui.value.numOflines);
+  ESP_LOGI(this->NAME, "Monitor initialized with %d lines", this->numOflines);
 }
 
 Monitor::~Monitor()
@@ -36,19 +46,19 @@ Monitor::~Monitor()
 void Monitor::taskFn()
 {
   this->displaySystemLine();
-  Screen ui;
-  if (xSemaphoreTake(this->ui.xMutex, portMAX_DELAY) == pdTRUE)
+  std::vector<String> buffer;
+  if (xSemaphoreTake(this->ui.xMutex, pdMS_TO_TICKS(10)) == pdTRUE)
   {
-    ui = this->ui.value;
-    xSemaphoreGive(this->ui.xMutex);
+    buffer = this->ui.value;
   }
+  xSemaphoreGive(this->ui.xMutex);
   this->monitor->clearBuffer();
   this->monitor->setFont(MONITOR_FONT);
 
-  for (int i = 0; i < ui.numOflines; i++)
+  for (int i = 0; i < this->numOflines; i++)
   {
-    this->monitor->setCursor(0, (i + 1) * (ui.fontHeight + MONITOR_LINE_SPACING));
-    this->monitor->print(ui.buffer[i].c_str());
+    this->monitor->setCursor(0, (i + 1) * (this->fontHeight + MONITOR_LINE_SPACING));
+    this->monitor->print(buffer[i].c_str());
   }
 
   this->monitor->sendBuffer();
@@ -56,7 +66,7 @@ void Monitor::taskFn()
 
 void Monitor::display(int line, const char *format, ...)
 {
-  if (line < 0 || line >= this->ui.value.numOflines)
+  if (line < 0 || line >= this->numOflines)
     return;
 
   char buffer[64];
@@ -65,42 +75,42 @@ void Monitor::display(int line, const char *format, ...)
   vsnprintf(buffer, sizeof(buffer), format, args);
   va_end(args);
 
-  if (xSemaphoreTake(this->ui.xMutex, portMAX_DELAY) == pdTRUE)
+  if (xSemaphoreTake(this->ui.xMutex, pdMS_TO_TICKS(10)) == pdTRUE)
   {
-    if (this->ui.value.buffer[line] != buffer)
-    {
-      this->ui.value.buffer[line] = std::string(buffer);
-    }
-    xSemaphoreGive(this->ui.xMutex);
+    this->ui.value[line] = String(buffer);
   };
+  xSemaphoreGive(this->ui.xMutex);
 }
 
 void Monitor::setRobotState(String state)
 {
-  SetUtils::setMutexData<String>(this->robotStateStr, state);
+  this->robotStateSend = state;
+  if (xQueueSendToFront(this->robotStateQueue, &this->robotStateSend, pdMS_TO_TICKS(10)) == pdFALSE)
+  {
+    ESP_LOGE(this->NAME, "Failed to set state: %s", this->robotStateSend.c_str());
+  }
 }
 
 void Monitor::displaySystemLine()
 {
-  String controllerStateStr;
-  GetUtils::getMutexData<String>(
-      this->robotStateStr,
-      [&](String value)
-      {
-        controllerStateStr = value;
-      });
+  uint32_t startTime = millis();
+  if (xQueueReceive(this->robotStateQueue, &this->robotStateRecv, pdMS_TO_TICKS(10)) == pdFALSE && this->robotStateRecv.length() <= 0)
+  {
+    this->robotStateRecv = "UNKNOW";
+  }
   int supplyLevel = analogRead(GPIO_NUM_34);
-
   String supplyLevelStr(map(supplyLevel, 0, 4096, 0, 100));
   supplyLevelStr = "B:" + supplyLevelStr + "%";
-  uint32_t controllerStateStrLen = this->monitor->getStrWidth(controllerStateStr.c_str());
-  uint32_t supplyLevelStrLen = this->monitor->getStrWidth(supplyLevelStr.c_str());
-  uint32_t numOfSpace = (this->monitor->getDisplayWidth() - controllerStateStrLen - supplyLevelStrLen) / this->monitor->getStrWidth(" ");
-
-  String content = controllerStateStr;
-  for (uint32_t i = 0; i < numOfSpace - 1; i++)
+  uint16_t controllerStateStrLen = this->monitor->getStrWidth(this->robotStateRecv.c_str());
+  uint16_t supplyLevelStrLen = this->monitor->getStrWidth(supplyLevelStr.c_str());
+  uint16_t numOfSpace = (uint16_t)((this->displayWidth - controllerStateStrLen - supplyLevelStrLen) / this->monitor->getStrWidth(" "));
+  String content = this->robotStateRecv;
+  if (numOfSpace > 0)
   {
-    content += " ";
+    for (uint16_t i = 0; i < numOfSpace - 1; i++)
+    {
+      content += " ";
+    }
   }
   content += supplyLevelStr;
 

@@ -49,12 +49,12 @@ int ColorDetector::getBlue()
 void ColorDetector::printColor(ColorRGB color, Monitor *monitor)
 {
   String colorStr = ColorDetector::colorToString(color.color);
-  monitor->display(MONITOR_LINE_COLOR_DETECTOR,
-                   "C:%s[%d,%d,%d]",
-                   colorStr.c_str(),
-                   constrain(color.red, 0, 255),
-                   constrain(color.green, 0, 255),
-                   constrain(color.blue, 0, 255));
+  // monitor->display(MONITOR_LINE_COLOR_DETECTOR,
+  //                  "C:%s[%d,%d,%d]",
+  //                  colorStr.c_str(),
+  //                  constrain(color.red, 0, 255),
+  //                  constrain(color.green, 0, 255),
+  //                  constrain(color.blue, 0, 255));
 
   ESP_LOGI(
       "PRINT_COLOR",

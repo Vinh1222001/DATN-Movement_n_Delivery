@@ -22,15 +22,7 @@
 #define MONITOR_LINE_LINE_FOLLOWER 2
 #define MONITOR_LINE_MPU_READER 3
 
-struct Screen
-{
-  uint8_t fontHeight;
-  uint8_t fontWidth;
-  uint8_t numOflines;
-  std::vector<std::string> buffer;
-};
-
-using UI = Types::SemaphoreMutexData<Screen>;
+using UI = Types::SemaphoreMutexData<std::vector<String>>;
 using RobotStateStr = Types::SemaphoreMutexData<String>;
 
 class Monitor : public BaseModule
@@ -39,6 +31,15 @@ private:
   U8G2_SH1106_128X64_NONAME_F_HW_I2C *monitor = nullptr;
   RobotStateStr robotStateStr;
 
+  String robotStateSend;
+  String robotStateRecv;
+
+  QueueHandle_t robotStateQueue;
+
+  uint16_t displayWidth;
+  uint8_t fontHeight;
+  uint8_t fontWidth;
+  uint8_t numOflines;
   UI ui;
 
   void displaySystemLine();

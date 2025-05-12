@@ -54,9 +54,7 @@ private:
   void taskFn() override;
 
 public:
-  LineFollower(
-      // MotorDriver *motorDriver = nullptr,
-      RWebSocketClient *webSocketClient = nullptr);
+  LineFollower(RWebSocketClient *webSocketClient = nullptr);
   ~LineFollower();
 
   bool getEnable();

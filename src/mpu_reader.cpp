@@ -118,9 +118,9 @@ void MPUReader::taskFn()
 	Velocity vel = this->getVelocity();
 	Gyroscope gyro = this->getGyroData();
 
-	this->monitor->display(3, "Acc x: %.2f, y: %.2f, z: %.2f", accel.x, accel.y, accel.z);
-	// this->monitor->display(3, "Vel x: %.2f, y: %.2f, z: %.2f", vel.x, vel.y, vel.z);
-	this->monitor->display(4, "Gyro x: %.2f, y: %.2f, z: %.2f", gyro.x, gyro.y, gyro.z);
+	// this->monitor->display(3, "Acc x: %.2f, y: %.2f, z: %.2f", accel.x, accel.y, accel.z);
+	this->monitor->display(2, "Vel[%.2f, %.2f, %.2f]", vel.x, vel.y, vel.z);
+	// this->monitor->display(4, "Gyro x: %.2f, y: %.2f, z: %.2f", gyro.x, gyro.y, gyro.z);
 }
 
 void MPUReader::computeVelocity()

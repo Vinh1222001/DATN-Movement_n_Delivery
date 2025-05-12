@@ -49,7 +49,7 @@ void Controller::stateMachine()
     /**
      * Testing connection to ESP32 CAM
      */
-    IS_NULL(this->communicate);
+    // IS_NULL(this->communicate);
     IS_NULL(this->monitor);
     this->ping();
     delay(2000);
@@ -68,7 +68,6 @@ void Controller::stateMachine()
     IS_NULL(this->colorDetector);
     IS_NULL(this->monitor);
     this->pickupTransit();
-    delay(1);
     break;
 
   case RobotState::DROPOFF_TRANSIT:
@@ -76,7 +75,6 @@ void Controller::stateMachine()
     IS_NULL(this->colorDetector);
     IS_NULL(this->monitor);
     this->dropoffTransit();
-    delay(1);
     break;
 
   case RobotState::PICKUP:
@@ -242,6 +240,7 @@ bool Controller::ready()
 bool Controller::ping()
 {
   this->monitor->setRobotState("PING");
+
   ESP_LOGI(this->NAME, "Try to connect Classifier");
   std::vector<String> pingMsg;
   pingMsg.push_back("Request to connect...");
@@ -285,7 +284,8 @@ bool Controller::start()
   this->setNextArea(YELLOW);
   ESP_LOGI(this->NAME, "Next Area is YELLOW");
   this->setState(RobotState::PICKUP_TRANSIT);
-  this->monitor->setRobotState("PICKUP_TRANSIT");
+  this->monitor->setRobotState("PICKUP_TS");
+
   // this->setState(IDLE);
   return true;
 }
@@ -380,7 +380,7 @@ bool Controller::classify()
   }
 
   this->setState(RobotState::DROPOFF_TRANSIT);
-  this->monitor->setRobotState("DROPOFF_TRANSIT");
+  this->monitor->setRobotState("DROPOFF_TS");
   this->isClassifying = false;
   std::vector<String> msg;
   msg.push_back("STOP_CLASSIFY");
