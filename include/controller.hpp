@@ -69,6 +69,8 @@ private:
   void stateMachine();
   void taskFn() override;
 
+  bool checkCorrectArea();
+
 public:
   Controller();
   ~Controller();

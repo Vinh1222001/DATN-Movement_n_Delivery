@@ -1,7 +1,6 @@
 #include "line_follower.hpp"
 
 LineFollower::LineFollower(
-    // MotorDriver *motorDriver,
     RWebSocketClient *webSocketClient)
     : BaseModule(
           "LINE_FOLLOWER",
@@ -177,13 +176,13 @@ void LineFollower::driveMotor(LineFollowerDecision decision)
   switch (decision)
   {
   case LEFT:
-    this->motorDriver->moveLeftSync(75);
+    this->motorDriver->moveLeftSync(80);
     break;
   case RIGHT:
-    this->motorDriver->moveRightSync(75);
+    this->motorDriver->moveRightSync(80);
     break;
   case FORWARD:
-    this->motorDriver->moveForwardSync(75);
+    this->motorDriver->moveForwardSync(80);
     break;
   case BACKWARD:
     this->motorDriver->moveBackwardSync(70);

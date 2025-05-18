@@ -99,6 +99,9 @@ void Controller::stateMachine()
     this->idle();
     break;
   }
+
+  IS_NULL(this->monitor);
+  this->monitor->display(4, "Next: %s", ColorDetector::colorToString(this->nextArea));
 }
 
 void Controller::taskFn()
@@ -233,6 +236,7 @@ bool Controller::ready()
 
   ESP_LOGI(this->NAME, "All important components have run!");
   this->setState(RobotState::PING);
+  // this->setState(RobotState::START);
 
   return true;
 }
@@ -293,6 +297,13 @@ bool Controller::start()
 bool Controller::pickup()
 {
   ESP_LOGI(this->NAME, "Pickup");
+  bool isCorrectArea = this->checkCorrectArea();
+  if (!isCorrectArea)
+  {
+    this->setState(RobotState::PICKUP_TRANSIT);
+    this->monitor->setRobotState("PICKUP_TS");
+    return true;
+  }
   delay(2000);
   this->setState(RobotState::CLASSIFY);
   this->monitor->setRobotState("CLASSIFY");
@@ -304,6 +315,13 @@ bool Controller::pickup()
 bool Controller::dropoff()
 {
   ESP_LOGI(this->NAME, "Dropoff");
+  bool isCorrectArea = this->checkCorrectArea();
+  if (!isCorrectArea)
+  {
+    this->setState(RobotState::DROPOFF_TRANSIT);
+    this->monitor->setRobotState("DROPOFF_TS");
+    return true;
+  }
   this->setNextArea(YELLOW);
   ESP_LOGI(this->NAME, "Move to to YELLOW");
   delay(5000);
@@ -364,18 +382,22 @@ bool Controller::classify()
   if (objInfo[ProductClassProps::LABEL] == "jerry")
   {
     this->setNextArea(BLUE);
+    this->monitor->display(3, "Obj: jerry");
   }
   else if (objInfo[ProductClassProps::LABEL] == "vit_vang")
   {
     this->setNextArea(RED);
+    this->monitor->display(3, "Obj: vit_vang");
   }
   else if (objInfo[ProductClassProps::LABEL] == "hiep_si")
   {
     this->setNextArea(GREEN);
+    this->monitor->display(3, "Obj: hiep_si");
   }
   else
   {
     ESP_LOGE(this->NAME, "Unknow the label! The label: %s", objInfo[0].c_str());
+    this->monitor->display(3, "Obj: unknow");
     return false;
   }
 
@@ -462,5 +484,24 @@ bool Controller::dropoffTransit()
 bool Controller::setNextArea(ColorSet area)
 {
   this->nextArea = area;
+  if (this->colorDetector != nullptr)
+  {
+    this->colorDetector->resetColorQueue();
+  }
   return true;
+}
+
+bool Controller::checkCorrectArea()
+{
+  int check = 0;
+  for (int i = 0; i < 5; i++)
+  {
+    if (this->colorDetector->getColor().color == this->nextArea)
+    {
+      check++;
+    }
+    delay(100);
+  }
+
+  return check > 3;
 }

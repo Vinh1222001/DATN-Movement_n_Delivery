@@ -44,6 +44,8 @@ private:
 
   ColorDetectorValue color;
 
+  QueueHandle_t colorQueue;
+
   RWebSocketClient *webSocketClient;
   Monitor *monitor;
 
@@ -63,6 +65,7 @@ public:
 
   static String colorToString(ColorSet color);
   ColorRGB getColor();
+  void resetColorQueue();
 };
 
 #endif
