@@ -13,6 +13,8 @@ MPUReader::MPUReader(Monitor *monitor)
 	this->data.xMutex = xSemaphoreCreateMutex();
 	this->data.value.lastTime = millis();
 
+	this->velocity3dState = {{0, 0, 0}, {0, 0, 0}, millis(), {0, 0, 0}};
+
 	this->monitor = monitor;
 }
 
@@ -117,6 +119,8 @@ void MPUReader::taskFn()
 	Acceleration accel = this->getAccelerationData();
 	Velocity vel = this->getVelocity();
 	Gyroscope gyro = this->getGyroData();
+
+	IS_NULL(this->monitor);
 
 	// this->monitor->display(3, "Acc x: %.2f, y: %.2f, z: %.2f", accel.x, accel.y, accel.z);
 	this->monitor->display(2, "Vel[%.2f, %.2f, %.2f]", vel.x, vel.y, vel.z);
@@ -246,4 +250,79 @@ Velocity MPUReader::getVelocity()
 	}
 
 	return data;
+}
+
+Vector3D MPUReader::getAccelerationSync()
+{
+	sensors_event_t currAccel, currGyro, currTemp;
+	this->sensor->getEvent(&currAccel, &currGyro, &currTemp);
+
+	// Vector3D accel = {
+	// 	.x = this->setWithThreshold<float>(
+	// 		currAccel.acceleration.x,
+	// 		MPU_READER_ACCELERATION_X_THRESHOLD),
+	// 	.y = this->setWithThreshold<float>(
+	// 		currAccel.acceleration.y,
+	// 		MPU_READER_ACCELERATION_Y_THRESHOLD),
+	// 	.z = this->setWithThreshold<float>(
+	// 		currAccel.acceleration.z,
+	// 		MPU_READER_ACCELERATION_Z_THRESHOLD),
+	// };
+	Vector3D accel = {
+		currAccel.acceleration.x,
+		currAccel.acceleration.y,
+		currAccel.acceleration.z};
+	return accel;
+}
+
+Vector3D MPUReader::getVelocity3D()
+{
+	// Noise threshold (m/s², adjust based on sensor)
+	const float NOISE_THRESHOLD = 0.05f;
+	// Gravity vector (m/s², assuming z-axis up)
+	const Vector3D GRAVITY = {0.0f, 0.0f, 9.81f};
+
+	// Calculate time step (seconds)
+	uint32_t currentTime = millis();
+	float dt = (currentTime - this->velocity3dState.lastTime) / 1000.0f;
+	if (dt <= 0)
+	{
+		this->velocity3dState.lastTime = currentTime;
+		return this->velocity3dState.velocity;
+	}
+
+	// Subtract bias and gravity
+	Vector3D accel = this->getAccelerationSync();
+	Vector3D correctedAccel = {
+		accel.x - this->velocity3dState.bias.x - GRAVITY.x,
+		accel.y - this->velocity3dState.bias.y - GRAVITY.y,
+		accel.z - this->velocity3dState.bias.z - GRAVITY.z};
+
+	// Apply noise threshold
+	if (abs(correctedAccel.x) < NOISE_THRESHOLD)
+		correctedAccel.x = 0.0f;
+	if (abs(correctedAccel.y) < NOISE_THRESHOLD)
+		correctedAccel.y = 0.0f;
+	if (abs(correctedAccel.z) < NOISE_THRESHOLD)
+		correctedAccel.z = 0.0f;
+
+	// Trapezoidal rule
+	this->velocity3dState.velocity.x += (correctedAccel.x + this->velocity3dState.lastAccel.x) / 2.0f * dt;
+	this->velocity3dState.velocity.y += (correctedAccel.y + this->velocity3dState.lastAccel.y) / 2.0f * dt;
+	this->velocity3dState.velocity.z += (correctedAccel.z + this->velocity3dState.lastAccel.z) / 2.0f * dt;
+
+	// Stillness detection: reset velocity if acceleration is near zero
+	const float STILLNESS_THRESHOLD = 0.1f;
+	if (abs(correctedAccel.x) < STILLNESS_THRESHOLD &&
+		abs(correctedAccel.y) < STILLNESS_THRESHOLD &&
+		abs(correctedAccel.z) < STILLNESS_THRESHOLD)
+	{
+		this->velocity3dState.velocity = {0.0f, 0.0f, 0.0f};
+	}
+
+	// Update this->velocity3dState
+	this->velocity3dState.lastAccel = correctedAccel;
+	this->velocity3dState.lastTime = currentTime;
+
+	return this->velocity3dState.velocity;
 }

@@ -164,7 +164,7 @@ bool Controller::init()
   // }
   // ESP_LOGI(this->NAME, "Init Web Socket Client success");
 
-  this->mpuReader = new MPUReader(this->monitor);
+  // this->mpuReader = new MPUReader(this->monitor);
 
   this->colorDetector = new ColorDetector(this->monitor, this->webSocketClient);
   if (this->colorDetector == nullptr)
@@ -174,7 +174,7 @@ bool Controller::init()
   }
   ESP_LOGI(this->NAME, "Init Color Detector success");
 
-  this->lineFollower = new LineFollower(this->webSocketClient);
+  this->lineFollower = new LineFollower(this->monitor, this->webSocketClient);
   if (this->lineFollower == nullptr)
   {
     ESP_LOGE(this->NAME, "Failed to init Line Follower");
@@ -200,9 +200,9 @@ bool Controller::setup()
   // delay(1000);
   // ESP_LOGI(this->NAME, "Created WebSocketClient's task successfully");
 
-  ESP_LOGI(this->NAME, "Creating MPUReader's task...");
-  this->mpuReader->createTask();
-  delay(1000);
+  // ESP_LOGI(this->NAME, "Creating MPUReader's task...");
+  // this->mpuReader->createTask();
+  // delay(1000);
 
   ESP_LOGI(this->NAME, "Creating ColorDetector's task...");
   this->colorDetector->createTask();
@@ -231,8 +231,8 @@ bool Controller::ready()
   this->runComponent(this->monitor);
   ESP_LOGI(this->NAME, "Run Monitor's task successfully");
 
-  this->runComponent(this->mpuReader);
-  ESP_LOGI(this->NAME, "Run Mpu Reader's task successfully");
+  // this->runComponent(this->mpuReader);
+  // ESP_LOGI(this->NAME, "Run Mpu Reader's task successfully");
 
   ESP_LOGI(this->NAME, "All important components have run!");
   this->setState(RobotState::PING);

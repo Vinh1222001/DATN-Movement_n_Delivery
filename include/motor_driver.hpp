@@ -9,6 +9,8 @@
 #include "PID.cpp"
 #include "mpu_reader.hpp"
 #include "utils/assign.hpp"
+#include "mpu_reader.hpp"
+#include "monitor.hpp"
 
 #define MOTOR_DRIVER_PIN_IN4 GPIO_NUM_32
 #define MOTOR_DRIVER_PIN_IN3 GPIO_NUM_25
@@ -19,6 +21,8 @@
 #define MOTOR_DRIVER_PIN_ENB GPIO_NUM_12
 
 #define MOTOR_DRIVER_INIT_SPEED 0
+
+#define MOTORE_SPEED_THRESHOLD 100
 
 using MotorState = Types::SemaphoreMutexData<uint8_t>;
 
@@ -42,6 +46,8 @@ private:
 
   MotorSpeed speed;
 
+  int currentSpeed = 0;
+
   const uint8_t state[5][4] = {
       {0, 0, 0, 0},
       {0, 1, 1, 0},
@@ -49,12 +55,17 @@ private:
       {1, 0, 1, 0},
       {0, 1, 0, 1}};
 
+  MPUReader *mpuReader = nullptr;
+  Monitor *monitor = nullptr;
+
   void taskFn() override;
   void writeState(const uint8_t val);
   void commit(uint8_t state, Speed speed);
 
+  void computeSpeed();
+
 public:
-  MotorDriver();
+  MotorDriver(Monitor *monitor = nullptr);
   ~MotorDriver();
 
   void setSpeed(const int value);

@@ -1,6 +1,7 @@
 #include "line_follower.hpp"
 
 LineFollower::LineFollower(
+    Monitor *monitor,
     RWebSocketClient *webSocketClient)
     : BaseModule(
           "LINE_FOLLOWER",
@@ -8,7 +9,6 @@ LineFollower::LineFollower(
           LINE_FOLLOWER_TASK_DELAY,
           LINE_FOLLOWER_TASK_STACK_DEPTH_LEVEL,
           LINE_FOLLOWER_TASK_PINNED_CORE_ID),
-      motorDriver(motorDriver),
       webSocketClient(webSocketClient)
 {
   pinMode(LINE_SENSOR_PIN_LEFT_MOST, INPUT);
@@ -20,7 +20,7 @@ LineFollower::LineFollower(
   this->signals = SetUtils::initMutexData<LineFollowerSensorValues>({0, 0, 0, 0, 0});
 
   this->enable = SetUtils::initMutexData<bool>(false);
-  this->motorDriver = new MotorDriver();
+  this->motorDriver = new MotorDriver(monitor);
 }
 
 LineFollower::~LineFollower() {}

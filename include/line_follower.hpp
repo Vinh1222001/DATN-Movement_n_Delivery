@@ -9,6 +9,7 @@
 #include "motor_driver.hpp"
 #include "web_server.hpp"
 #include "utils/compare.hpp"
+#include "monitor.hpp"
 
 #define LINE_SENSOR_PIN_LEFT_MOST GPIO_NUM_33
 #define LINE_SENSOR_PIN_LEFT GPIO_NUM_39
@@ -54,7 +55,7 @@ private:
   void taskFn() override;
 
 public:
-  LineFollower(RWebSocketClient *webSocketClient = nullptr);
+  LineFollower(Monitor *monitor = nullptr, RWebSocketClient *webSocketClient = nullptr);
   ~LineFollower();
 
   bool getEnable();

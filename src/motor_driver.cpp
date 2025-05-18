@@ -1,17 +1,20 @@
 #include "motor_driver.hpp"
 
-MotorDriver::MotorDriver()
+MotorDriver::MotorDriver(Monitor *monitor)
     : BaseModule(
           "MOTOR_DRIVER",
           MOTOR_DRIVER_TASK_PRIORITY,
           MOTOR_DRIVER_TASK_DELAY,
           MOTOR_DRIVER_TASK_STACK_DEPTH_LEVEL,
-          MOTOR_DRIVER_TASK_PINNED_CORE_ID)
+          MOTOR_DRIVER_TASK_PINNED_CORE_ID),
+      monitor(monitor)
 {
   pinMode(MOTOR_DRIVER_PIN_IN4, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN3, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN2, OUTPUT);
   pinMode(MOTOR_DRIVER_PIN_IN1, OUTPUT);
+
+  this->mpuReader = new MPUReader();
 
   this->currentState = SetUtils::initMutexData<uint8_t>(MOTOR_DRIVER_MOVE_STOP_STATE_IDX);
   this->speed = SetUtils::initMutexData<Speed>({MOTOR_DRIVER_INIT_SPEED, MOTOR_DRIVER_INIT_SPEED});
@@ -60,13 +63,19 @@ void MotorDriver::setSpeed(const int value)
 
 void MotorDriver::commit(uint8_t state, Speed speed)
 {
+  if (speed.left != 0 && speed.right != 0)
+  {
+    this->computeSpeed();
+  }
+  Speed commitSpeed = {this->currentSpeed, this->currentSpeed};
+  ESP_LOGI(this->NAME, "commitSpeed: %d %d", commitSpeed.left, commitSpeed.right);
   digitalWrite(MOTOR_DRIVER_PIN_IN1, this->state[state][0]);
   digitalWrite(MOTOR_DRIVER_PIN_IN2, this->state[state][1]);
   digitalWrite(MOTOR_DRIVER_PIN_IN3, this->state[state][2]);
   digitalWrite(MOTOR_DRIVER_PIN_IN4, this->state[state][3]);
 
-  analogWrite(MOTOR_DRIVER_PIN_ENA, speed.left);
-  analogWrite(MOTOR_DRIVER_PIN_ENB, speed.right);
+  analogWrite(MOTOR_DRIVER_PIN_ENA, commitSpeed.left);
+  analogWrite(MOTOR_DRIVER_PIN_ENB, commitSpeed.right);
 }
 
 void MotorDriver::moveForward()
@@ -126,5 +135,24 @@ void MotorDriver::moveRightSync(int speed)
 
 void MotorDriver::stopSync()
 {
+  if (this->currentSpeed != 0)
+  {
+    this->currentSpeed = 0;
+  }
   this->commit(MOTOR_DRIVER_MOVE_STOP_STATE_IDX, Speed{0, 0});
+}
+
+void MotorDriver::computeSpeed()
+{
+  Vector3D velocity3d = this->mpuReader->getVelocity3D();
+  ESP_LOGI(this->NAME, "velocity3d: %.2f %.2f %.2f", velocity3d.x, velocity3d.y, velocity3d.z);
+  float velocity = sqrtf((velocity3d.x * velocity3d.x) + (velocity3d.y * velocity3d.y) + (velocity3d.z * velocity3d.z));
+  ESP_LOGI(this->NAME, "velocity: %.2f", velocity);
+  if (velocity < MOTORE_SPEED_THRESHOLD)
+  {
+    this->currentSpeed++;
+    ESP_LOGI(this->NAME, "computeSpeed.currentSpeed: %d", this->currentSpeed);
+  }
+  IS_NULL(this->monitor);
+  this->monitor->display(2, "Velocity: %.2f", velocity);
 }

@@ -8,6 +8,7 @@
 
 #include "base_module.hpp"
 #include "types.hpp"
+#include "utils/compare.hpp"
 
 #include "monitor.hpp"
 
@@ -34,9 +35,24 @@ struct MotionState
 
 using MpuReaderData = Types::SemaphoreMutexData<MotionState>;
 
+struct Vector3D
+{
+  float x, y, z;
+};
+
+struct VelocityState3D
+{
+  Vector3D velocity;
+  Vector3D lastAccel;
+  uint32_t lastTime;
+  Vector3D bias;
+};
+
 class MPUReader : public BaseModule
 {
 private:
+  VelocityState3D velocity3dState;
+
   Adafruit_MPU6050 *sensor = nullptr;
 
   Monitor *monitor = nullptr;
@@ -53,14 +69,18 @@ private:
 
   void setData();
 
+  Vector3D getAccelerationSync();
+
 public:
-  MPUReader(Monitor *monitor);
+  MPUReader(Monitor *monitor = nullptr);
   ~MPUReader();
 
   MotionState getMpuReaderData();
   Gyroscope getGyroData();
   Acceleration getAccelerationData();
   Velocity getVelocity();
+
+  Vector3D getVelocity3D();
 };
 
 #endif
